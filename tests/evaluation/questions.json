@@ -1,0 +1,2186 @@
+{
+  "benchmark": {
+    "name": "Investcorp baseline evaluation benchmark",
+    "version": "0.1",
+    "created": "2026-09-26",
+    "workbook": "data/Assignment_Data.xlsx",
+    "workbook_sha256": "998cc8a57067a1f566af3112b3401674ad0310d895a6cce55fc320d455f7a1c4",
+    "sheets": {
+      "Investments_data_50k": [
+        50000,
+        24
+      ],
+      "meeting_notes_20k": [
+        20000,
+        13
+      ],
+      "performance_data": [
+        1632,
+        65
+      ]
+    },
+    "metadata_source": "docs/metadata/data_dictionary_DRAFT.md",
+    "ground_truth_method": "Computed read-only with pandas from the workbook. Meeting evidence sets use text matching on repaired meeting text (UTF-8 bytes re-decoded from cp1252, with latin-1 fallback for U+008D). Repair is used only to define ground truth; A11 (no repair in the pipeline) is unaffected.",
+    "scoring_notes": {
+      "numbers": "Compare with the stated tolerance (default exact for integers).",
+      "id_set": "Exact set match, plus precision/recall if partial credit is wanted.",
+      "behavior": "Every must_include item present and no must_not item present. Judged by a rubric or a human reviewer; not by string equality.",
+      "wrong_values": "A response equal to a listed wrong value is a known-failure hit and should be tagged with the recorded reason."
+    },
+    "counts": {
+      "structured_investment": 10,
+      "structured_performance": 10,
+      "meeting_retrieval": 10,
+      "hybrid": 10,
+      "adversarial_edge_semantic": 10
+    },
+    "total": 50,
+    "visible_total": 40,
+    "holdout_total": 10,
+    "holdout_file": "tests/evaluation/holdout/holdout_questions.json",
+    "holdout_policy": "The 10 holdout questions are in the holdout file. Implementation and tuning work must not read it; it is used only for evaluation after a change is made. This is separation by file, not access control.",
+    "change_log": [
+      "v0.1: holdout questions moved to the holdout file; INV-06, HYB-01 and ADV-06 expected behaviour tightened (status, last-met, relative-date rules). No answers or ground truths changed."
+    ]
+  },
+  "questions": [
+    {
+      "id": "INV-01",
+      "category": "structured_investment",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "How many investment records does client A12345 have for the Emerald Real Estate Fund?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "client_id": "A12345",
+        "deal_name": "Emerald Real Estate Fund"
+      },
+      "expected_operation": "count_rows",
+      "expected_answer": {
+        "type": "integer",
+        "value": 48
+      },
+      "answer_summary": "48 records",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "client_id == 'A12345' AND deal_name == 'Emerald Real Estate Fund'",
+          "derivation": "COUNT(*)",
+          "rows_matched": 48
+        }
+      ],
+      "failure_mode_target": [
+        "INV_ROW_VS_DISTINCT"
+      ],
+      "metadata_ref": [
+        "2.2"
+      ],
+      "semantic_stress": false,
+      "notes": "The same deal repeats across many records: 1 distinct deal_id and 46 distinct dat_MinInvested values over 48 rows. A system that answers 1 (one deal) or dedups the deal fails. Counting rows is the documented grain-neutral answer; the meaning of a row is undocumented (Section 2.2)."
+    },
+    {
+      "id": "INV-02",
+      "category": "structured_investment",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "How many investment records does client C12355 have, and how many distinct deal names and distinct deal IDs do those records cover?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "client_id": "C12355"
+      },
+      "expected_operation": "count_rows + count_distinct(deal_name) + count_distinct(deal_id)",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "records": 251,
+          "distinct_deal_names": 9,
+          "distinct_deal_ids": 8
+        }
+      },
+      "answer_summary": "251 records; 9 deal names; 8 deal IDs",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "client_id == 'C12355'",
+          "derivation": "COUNT(*), COUNT(DISTINCT deal_name), COUNT(DISTINCT deal_id)",
+          "rows_matched": 251
+        }
+      ],
+      "failure_mode_target": [
+        "INV_ROW_VS_DISTINCT",
+        "ENT_DEALID_MULTI_NAME"
+      ],
+      "metadata_ref": [
+        "A5",
+        "2.2"
+      ],
+      "semantic_stress": false,
+      "notes": "Three different numbers must be kept apart: rows=251, distinct deal_name=9, distinct deal_id=8. Names and ids are not 1:1 (A5), so 9 names against 8 ids is expected."
+    },
+    {
+      "id": "INV-03",
+      "category": "structured_investment",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "What is the total USD amount across all of client A12345's investment records?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "client_id": "A12345"
+      },
+      "expected_operation": "sum(Investment_Amount_USD_for_agg)",
+      "expected_answer": {
+        "type": "number",
+        "value": 472004607.02,
+        "unit": "USD",
+        "tolerance_abs": 0.01,
+        "wrong_values": [
+          {
+            "value": 632037874.0,
+            "why": "sum of natural-currency amounts across mixed currencies"
+          }
+        ]
+      },
+      "answer_summary": "472,004,607.02 USD",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "client_id == 'A12345'",
+          "derivation": "SUM(Investment_Amount_USD_for_agg)",
+          "rows_matched": 258
+        }
+      ],
+      "failure_mode_target": [
+        "INV_USD_VS_NATURAL"
+      ],
+      "metadata_ref": [
+        "3.1"
+      ],
+      "semantic_stress": false,
+      "notes": "Correct = sum of the USD field (472,004,607.02). Summing Investment_Amount_Natural_Currency gives 632,037,874, which mixes 6 currencies and is wrong. What the amount represents (committed / called / invested) is undocumented; a good answer may say so."
+    },
+    {
+      "id": "INV-04",
+      "category": "structured_investment",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Which relationship manager manages client B12346?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "client_id": "B12346"
+      },
+      "expected_operation": "group_count(AccountRM) for one client; expect multi-RM answer",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "all 5 RM names with their record counts"
+        ],
+        "must_not": [
+          "state a single RM as 'the' manager of the client",
+          "use AccountRMEmail, RM_Alias or AccountOwnerId"
+        ],
+        "reference_facts": {
+          "Sara Khan": 53,
+          "Rahul Mehta": 44,
+          "Carlos Gomez": 44,
+          "Daniel Lee": 39,
+          "Priya Sharma": 36
+        },
+        "total_records": 216
+      },
+      "answer_summary": "No single RM: Sara Khan 53, Rahul Mehta 44, Carlos Gomez 44, Daniel Lee 39, Priya Sharma 36",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "client_id == 'B12346'",
+          "derivation": "GROUP BY AccountRM COUNT(*)",
+          "rows_matched": 216
+        }
+      ],
+      "failure_mode_target": [
+        "INV_RM_RECORD_LEVEL"
+      ],
+      "metadata_ref": [
+        "A1",
+        "A2",
+        "A3",
+        "R2"
+      ],
+      "semantic_stress": false,
+      "notes": "A2: RM is record-level. The data has no single RM per client. The answer must report the RM set with record counts, not pick one (for example the modal RM, Sara Khan). AccountRM only (A1); ignore emails and aliases (A3)."
+    },
+    {
+      "id": "INV-06",
+      "category": "structured_investment",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "How many clients are Closed?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "field": "ClientStatus",
+        "value": "Closed"
+      },
+      "expected_operation": "count_distinct(client_id) and count(rows) where ClientStatus = Closed, reported as relationship/record-level; performance status, if mentioned, presented separately",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "192 clients with at least one Closed record and/or 12,488 Closed records",
+          "an explicit statement that investments ClientStatus is relationship/record-level and that a client has records under several statuses (no single client-wide status)",
+          "if performance status is mentioned at all, it is presented separately, labelled as performance_data Investment_Status_Name, with the note that this field has no 'Closed' value"
+        ],
+        "must_not": [
+          "report a client-level count of Closed clients without the record-level qualification",
+          "state or imply a single client-wide status for any client",
+          "answer the Closed question from performance Investment_Status_Name, or merge the two status fields into one figure",
+          "treat the absence of 'Closed' in performance status as evidence that clients are not Closed"
+        ],
+        "reference_facts": {
+          "distinct_clients_with_closed_record": 192,
+          "closed_records": 12488,
+          "total_clients": 192,
+          "performance_status": {
+            "field": "performance_data.Investment_Status_Name",
+            "has_closed_value": false,
+            "latest_snapshot_status_counts_192_clients": {
+              "Dormant": 73,
+              "Prospect": 62,
+              "Active": 57
+            },
+            "handling": "shown separately if mentioned; never a substitute for ClientStatus"
+          }
+        }
+      },
+      "answer_summary": "192 clients have >=1 Closed record (12,488 records); status is relationship/record-level; performance status (no Closed value) only if shown separately",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "ClientStatus == 'Closed'",
+          "derivation": "COUNT(DISTINCT client_id), COUNT(*)",
+          "rows_matched": 12488
+        }
+      ],
+      "failure_mode_target": [
+        "INV_STATUS_RELATIONSHIP"
+      ],
+      "metadata_ref": [
+        "A4",
+        "S8"
+      ],
+      "semantic_stress": false,
+      "notes": "Agreed rule: investments ClientStatus is relationship-level (A4) and is never collapsed to one client-wide status. 192 of 192 clients have at least one Closed record, and 12,488 records are Closed; every client also has Active, Dormant and Prospect records. Performance Investment_Status_Name is a different field with no 'Closed' value (latest-snapshot mix Dormant 73, Prospect 62, Active 57). Where it is relevant it is presented separately and not used to answer or reconcile the Closed question. Presenting 'N clients are Closed' as a client property is wrong."
+    },
+    {
+      "id": "INV-07",
+      "category": "structured_investment",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "What is the total USD amount for the Orion Infrastructure I deal?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "deal_name": "Orion Infrastructure I"
+      },
+      "expected_operation": "sum(Investment_Amount_USD_for_agg) with exact deal_name match",
+      "expected_answer": {
+        "type": "number",
+        "value": 14184184822.55,
+        "unit": "USD",
+        "tolerance_abs": 0.01,
+        "records": 7794,
+        "wrong_values": [
+          {
+            "value": 15272474828.3,
+            "why": "prefix match includes Orion Infrastructure IV"
+          }
+        ]
+      },
+      "answer_summary": "14,184,184,822.55 USD (7,794 records); prefix match would give 15,272,474,828.30",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "deal_name == 'Orion Infrastructure I' (exact)",
+          "derivation": "SUM(Investment_Amount_USD_for_agg)",
+          "rows_matched": 7794
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_DEAL_PREFIX"
+      ],
+      "metadata_ref": [
+        "A5",
+        "4"
+      ],
+      "semantic_stress": false,
+      "notes": "'Orion Infrastructure I' is a string prefix of 'Orion Infrastructure IV'. Exact match: 7,794 rows, 14,184,184,822.55 USD. A LIKE/prefix/fuzzy match adds the IV rows: 8,388 rows, 15,272,474,828.30 USD (wrong)."
+    },
+    {
+      "id": "INV-08",
+      "category": "structured_investment",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "How many investment records carry deal ID DL100001, and which deal names appear on them?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "deal_id": "DL100001"
+      },
+      "expected_operation": "count_rows + distinct deal_name for one deal_id",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "records": 8950,
+          "deal_names": {
+            "NorthBridge Growth Fund": 8356,
+            "Orion Infrastructure IV": 594
+          }
+        }
+      },
+      "answer_summary": "8,950 records; NorthBridge Growth Fund 8,356; Orion Infrastructure IV 594",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "deal_id == 'DL100001'",
+          "derivation": "COUNT(*), GROUP BY deal_name COUNT(*)",
+          "rows_matched": 8950
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_DEALID_MULTI_NAME"
+      ],
+      "metadata_ref": [
+        "A5"
+      ],
+      "semantic_stress": false,
+      "notes": "A5: deal_id and deal_name are independent. DL100001 has two names. A system that maps the id to one name (for example the majority name) loses 594 rows of Orion Infrastructure IV."
+    },
+    {
+      "id": "INV-10",
+      "category": "structured_investment",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "What is the total original-currency amount of all GBP-denominated investment records, and what is that in USD?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "field": "Natural_Currency_Code",
+        "value": "GBP"
+      },
+      "expected_operation": "sum(Investment_Amount_Natural_Currency) and sum(Investment_Amount_USD_for_agg) for one currency",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "natural_currency_gbp": 20880959986.0,
+          "usd": 26101199982.5,
+          "records": 8370
+        },
+        "tolerance_abs": 0.01
+      },
+      "answer_summary": "20,880,959,986 GBP = 26,101,199,982.50 USD (8,370 records)",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "Natural_Currency_Code == 'GBP'",
+          "derivation": "SUM(Investment_Amount_Natural_Currency), SUM(Investment_Amount_USD_for_agg)",
+          "rows_matched": 8370
+        }
+      ],
+      "failure_mode_target": [
+        "INV_USD_VS_NATURAL"
+      ],
+      "metadata_ref": [
+        "3.1"
+      ],
+      "semantic_stress": false,
+      "notes": "Natural-currency sums are valid only within one currency: 20,880,959,986 GBP over 8,370 records = 26,101,199,982.50 USD (fixed rate 1.25)."
+    },
+    {
+      "id": "PERF-01",
+      "category": "structured_performance",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "What is client A12345's latest CI Current MOIC?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "client_id": "A12345"
+      },
+      "expected_operation": "latest_snapshot_per_client then read CI_Current_MOIC",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "raw": "1.33x",
+          "numeric": 1.33,
+          "as_of_date": "2024-10-25"
+        }
+      },
+      "answer_summary": "1.33x (as of 2024-10-25)",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "Client_Id == 'A12345' AND IsGroup_Flag == 'N'",
+          "derivation": "row with MAX(As_Of_Date) among this client's rows",
+          "rows_matched": 8
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_LATEST_PER_CLIENT",
+        "PERF_MOIC_TEXT"
+      ],
+      "metadata_ref": [
+        "A6",
+        "A7",
+        "5"
+      ],
+      "semantic_stress": false,
+      "notes": "Latest snapshot is 2024-10-25: CI_Current_MOIC = 1.33x. Its other 7 snapshots hold 0.93x..3.0x, so picking the first row, a random row or the global max date returns a wrong value. The As_Of_Date should be stated (A6)."
+    },
+    {
+      "id": "PERF-02",
+      "category": "structured_performance",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Which client has the highest CI Total MOIC in its latest performance snapshot?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "field": "CI_Total_MOIC"
+      },
+      "expected_operation": "latest_snapshot_per_client then argmax(numeric MOIC)",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "client_id": "A12350",
+          "raw": "3.5x",
+          "as_of_date": "2021-06-20"
+        },
+        "wrong_values": [
+          {
+            "client_id": "B12359",
+            "why": "maximum over all snapshots, not per-client latest"
+          }
+        ]
+      },
+      "answer_summary": "A12350, 3.5x (as of 2021-06-20)",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "IsGroup_Flag == 'N'",
+          "derivation": "per client latest row, then MAX(numeric CI_Total_MOIC)",
+          "rows_matched": 192
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_LATEST_PER_CLIENT",
+        "PERF_EXCLUDE_GROUP_ROWS",
+        "PERF_MOIC_TEXT"
+      ],
+      "metadata_ref": [
+        "A6",
+        "A7"
+      ],
+      "semantic_stress": false,
+      "notes": "Correct: A12350 at 3.5x (as of 2021-06-20); runner-up A12360 3.49x. Taking the maximum over ALL snapshots gives B12359 (3.5x, 2020-02-21), which is wrong. Group rows must be excluded."
+    },
+    {
+      "id": "PERF-04",
+      "category": "structured_performance",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "What is the average latest Total AUM amount across all clients?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "field": "Total_AUM_Amount"
+      },
+      "expected_operation": "latest_snapshot_per_client then mean",
+      "expected_answer": {
+        "type": "number",
+        "value": 9971615.68,
+        "tolerance_abs": 0.01,
+        "wrong_values": [
+          {
+            "value": 9893767.98,
+            "why": "all client snapshots"
+          },
+          {
+            "value": 9860817.19,
+            "why": "includes group rows"
+          }
+        ]
+      },
+      "answer_summary": "9,971,615.68 (no currency stated in data)",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "IsGroup_Flag == 'N'",
+          "derivation": "per client latest row; AVG(Total_AUM_Amount)",
+          "rows_matched": 192
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_LATEST_PER_CLIENT",
+        "PERF_EXCLUDE_GROUP_ROWS"
+      ],
+      "metadata_ref": [
+        "A6",
+        "3.3"
+      ],
+      "semantic_stress": false,
+      "notes": "Correct = 9,971,615.68 over 192 latest rows. Averaging all client snapshots gives 9,893,767.98; including group rows gives 9,860,817.19 (both wrong). The currency of the performance amounts is undocumented, so the answer must not state one."
+    },
+    {
+      "id": "PERF-05",
+      "category": "structured_performance",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "What is client A12345's latest COP MOIC?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "client_id": "A12345",
+        "family": "COP",
+        "metric": "MOIC"
+      },
+      "expected_operation": "metric availability check",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "state that no COP MOIC exists in the performance data"
+        ],
+        "must_not": [
+          "return COP_Current_IRR, COP_Total_IRR or another metric as if it were COP MOIC",
+          "return CI, RE or HF MOIC as a substitute"
+        ]
+      },
+      "answer_summary": "Unavailable: there is no COP MOIC column",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "check": "columns containing 'COP'",
+          "columns_found": [
+            "COP_Total_IRR",
+            "Last_COP_Investment_Name",
+            "COP_Realised_IRR",
+            "COP_Current_IRR",
+            "COP_FR_SI_Amount",
+            "Last_COP_Investment_Amount"
+          ],
+          "moic_columns_for_COP": []
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_UNAVAILABLE_METRIC"
+      ],
+      "metadata_ref": [
+        "A9",
+        "7"
+      ],
+      "semantic_stress": false,
+      "notes": "COP has IRR columns (latest COP_Current_IRR for A12345 = 0.1679) but no MOIC column. The correct answer is 'unavailable'. Substituting the COP IRR, or another family's MOIC, is the failure (A9)."
+    },
+    {
+      "id": "PERF-06",
+      "category": "structured_performance",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "What is client A12345's average CI Current MOIC across its snapshots?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "client_id": "A12345",
+        "field": "CI_Current_MOIC"
+      },
+      "expected_operation": "mean over snapshots (with caveat) or decline; do not present as current",
+      "validation_rule": {
+        "type": "behavior",
+        "accept_numeric": {
+          "value": 1.7812,
+          "tolerance_abs": 0.005
+        },
+        "must_include": [
+          "state that it is an average over 8 snapshots spanning 2010-05-06 to 2024-10-25",
+          "the latest value or the as-of date, or a caution that snapshots are not comparable"
+        ],
+        "must_not": [
+          "describe the average as the current or latest MOIC"
+        ],
+        "reference_facts": {
+          "snapshot_values": [
+            "0.93x",
+            "3.0x",
+            "1.29x",
+            "1.52x",
+            "2.26x",
+            "1.94x",
+            "1.98x",
+            "1.33x"
+          ],
+          "latest": "1.33x"
+        }
+      },
+      "answer_summary": "Mean 1.7812 only with caveat (8 snapshots 2010-05-06..2024-10-25); latest is 1.33x",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "Client_Id == 'A12345' AND IsGroup_Flag == 'N'",
+          "derivation": "AVG(numeric CI_Current_MOIC) over 8 snapshots",
+          "rows_matched": 8
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_TREND_AVERAGE",
+        "PERF_MOIC_TEXT"
+      ],
+      "metadata_ref": [
+        "A6",
+        "S4"
+      ],
+      "semantic_stress": false,
+      "notes": "The mean of the 8 snapshot values is 1.7812. The values vary widely (0.93x..3.0x) with no pattern (S4). If an average is given it must state the 8 snapshots and the date span, and must not be called the current value (latest = 1.33x)."
+    },
+    {
+      "id": "PERF-07",
+      "category": "structured_performance",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Has client A12345's CI Current MOIC been improving over time?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "client_id": "A12345",
+        "field": "CI_Current_MOIC"
+      },
+      "expected_operation": "ordered snapshot series; no trend claim",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "the values ordered by As_Of_Date",
+          "a statement that no consistent improving or declining pattern exists"
+        ],
+        "must_not": [
+          "say it has been improving",
+          "say it has been declining",
+          "read values in stored row order"
+        ],
+        "reference_facts": {
+          "ordered_series": [
+            {
+              "as_of_date": "2010-05-06",
+              "raw": "0.93x"
+            },
+            {
+              "as_of_date": "2012-04-24",
+              "raw": "3.0x"
+            },
+            {
+              "as_of_date": "2012-09-12",
+              "raw": "1.29x"
+            },
+            {
+              "as_of_date": "2015-03-23",
+              "raw": "1.52x"
+            },
+            {
+              "as_of_date": "2016-06-12",
+              "raw": "2.26x"
+            },
+            {
+              "as_of_date": "2018-03-17",
+              "raw": "1.94x"
+            },
+            {
+              "as_of_date": "2020-08-20",
+              "raw": "1.98x"
+            },
+            {
+              "as_of_date": "2024-10-25",
+              "raw": "1.33x"
+            }
+          ],
+          "first": {
+            "as_of_date": "2010-05-06",
+            "raw": "0.93x"
+          },
+          "last": {
+            "as_of_date": "2024-10-25",
+            "raw": "1.33x"
+          },
+          "monotonic": false
+        }
+      },
+      "answer_summary": "No consistent trend: 0.93x, 3.0x, 1.29x, 1.52x, 2.26x, 1.94x, 1.98x, 1.33x",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "Client_Id == 'A12345' AND IsGroup_Flag == 'N'",
+          "derivation": "ORDER BY As_Of_Date",
+          "rows_matched": 8
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_TREND_AVERAGE"
+      ],
+      "metadata_ref": [
+        "S4",
+        "A6"
+      ],
+      "semantic_stress": false,
+      "notes": "Chronological values rise and fall (0.93x, 3.0x, 1.29x, 1.52x, 2.26x, 1.94x, 1.98x, 1.33x). Rows are stored out of date order, so reading them in row order gives a different story. There is no monotonic trend; the answer should present the ordered series and not claim improvement or decline."
+    },
+    {
+      "id": "PERF-08",
+      "category": "structured_performance",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "How many clients have performance data, and how many performance snapshots do those clients have in total?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "sheet": "performance_data"
+      },
+      "expected_operation": "count_distinct(Client_Id) + count(rows) excluding group rows",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "clients": 192,
+          "snapshots": 1536
+        },
+        "wrong_values": [
+          {
+            "value": 1632,
+            "why": "includes group rows"
+          }
+        ]
+      },
+      "answer_summary": "192 clients; 1,536 snapshots (group rows excluded)",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "IsGroup_Flag == 'N'",
+          "derivation": "COUNT(DISTINCT Client_Id), COUNT(*)",
+          "rows_matched": 1536
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_EXCLUDE_GROUP_ROWS"
+      ],
+      "metadata_ref": [
+        "2.1",
+        "2.2"
+      ],
+      "semantic_stress": false,
+      "notes": "Correct: 192 clients and 1,536 snapshots. The sheet has 1,632 rows because it also holds 96 group rows with null Client_Id. Reporting 1,632 snapshots, or 96 or 288 entities, is wrong."
+    },
+    {
+      "id": "PERF-10",
+      "category": "structured_performance",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "What is the Total AUM amount for group 346?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "group_id": 346
+      },
+      "expected_operation": "read group row (IsGroup_Flag == 'Y')",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "total_aum": 4040540.43,
+          "as_of_date": "2012-04-26"
+        },
+        "tolerance_abs": 0.01,
+        "wrong_values": [
+          {
+            "value": 40790501.21,
+            "why": "sum of members' latest values"
+          }
+        ]
+      },
+      "answer_summary": "4,040,540.43 (group row, as of 2012-04-26)",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "Client_Group_Id == 346 AND IsGroup_Flag == 'Y'",
+          "derivation": "single group row",
+          "rows_matched": 1
+        }
+      ],
+      "failure_mode_target": [
+        "PERF_EXCLUDE_GROUP_ROWS",
+        "UNDOCUMENTED_SEMANTICS"
+      ],
+      "metadata_ref": [
+        "S3",
+        "A6"
+      ],
+      "semantic_stress": false,
+      "notes": "The group row holds 4,040,540.43 (as of 2012-04-26). The four member clients' latest values sum to 40,790,501.21. The two do not match, and how the group row relates to its members is undocumented (S3). The answer should use the group row and state its as-of date, not silently sum members."
+    },
+    {
+      "id": "MEET-01",
+      "category": "meeting_retrieval",
+      "difficulty": "easy",
+      "split": "visible",
+      "question": "How many meetings are recorded for client B12463, and over what date range?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "B12463"
+      },
+      "expected_operation": "filter meetings by client_id; count; min/max date",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "meetings": 22,
+          "first_date": "2022-02-20",
+          "last_date": "2026-01-12"
+        }
+      },
+      "answer_summary": "22 meetings, 2022-02-20..2026-01-12 (meeting-only client)",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "filter": "client_id == 'B12463'",
+          "derivation": "COUNT(*), MIN(date), MAX(date)",
+          "rows_matched": 22
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_MEETING_ONLY"
+      ],
+      "metadata_ref": [
+        "2.4",
+        "R1"
+      ],
+      "semantic_stress": false,
+      "notes": "B12463 exists only in meetings (no investment or performance rows). 22 meetings, 2022-02-20..2026-01-12. Answering 'client not found' because investments have no such client is the failure."
+    },
+    {
+      "id": "MEET-02",
+      "category": "meeting_retrieval",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "What were the action items from client A12345's meeting on 2022-10-01?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "A12345",
+        "date": "2022-10-01",
+        "meeting_id": 4560
+      },
+      "expected_operation": "filter meeting by client and date; read action_items (NULL)",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "state that action items are not recorded / missing for this meeting"
+        ],
+        "must_not": [
+          "assert that no action items were agreed or that the meeting had no actions",
+          "invent action items",
+          "answer that the meeting does not exist"
+        ],
+        "reference_facts": {
+          "meeting_id": 4560,
+          "action_items": null
+        }
+      },
+      "answer_summary": "Not recorded (NULL) - must not be read as 'no actions'",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "meeting_id": 4560,
+          "field": "action_items",
+          "value": null
+        }
+      ],
+      "failure_mode_target": [
+        "MEET_NULL_ACTION_ITEMS"
+      ],
+      "metadata_ref": [
+        "A8"
+      ],
+      "semantic_stress": false,
+      "notes": "action_items is NULL for this meeting. A8: NULL = not recorded. The answer must say no action items are recorded in the data, and must not say 'there were no action items' or 'no actions were agreed'. The summary text may still mention 'Action:' phrases inside it; those are summary text, not the action_items field."
+    },
+    {
+      "id": "MEET-04",
+      "category": "meeting_retrieval",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Which of client A12345's meetings had the largest estimated deal size, and what was it?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "A12345"
+      },
+      "expected_operation": "numeric normalisation of deal_size_estimate, then argmax within client",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "meeting_id": 17166,
+          "deal_size_estimate": "150M USD",
+          "usd": 150000000.0
+        },
+        "wrong_values": [
+          {
+            "value": "75M USD",
+            "why": "text sort order"
+          }
+        ]
+      },
+      "answer_summary": "Meeting 17166: 150M USD (150,000,000 USD)",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "filter": "client_id == 'A12345'",
+          "derivation": "numeric = number x (1e3 for k, 1e6 for M); argmax",
+          "rows_matched": 23
+        }
+      ],
+      "failure_mode_target": [
+        "MEET_DEALSIZE_TEXT",
+        "MEET_FILTER_BEFORE_RETRIEVAL"
+      ],
+      "metadata_ref": [
+        "A7",
+        "6"
+      ],
+      "semantic_stress": false,
+      "notes": "Correct: meeting 17166 (2025-12-29), 150M USD = 150,000,000 USD. Text ordering picks '75M USD'. The estimate refers to the meeting's opportunity, not to client A12345's investments (undocumented link)."
+    },
+    {
+      "id": "MEET-05",
+      "category": "meeting_retrieval",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "How many meetings are at the series B stage?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "field": "investment_stage",
+        "value": "series_b"
+      },
+      "expected_operation": "deterministic filter on investment_stage; count",
+      "expected_answer": {
+        "type": "integer",
+        "value": 2824
+      },
+      "answer_summary": "2,824 meetings",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "filter": "investment_stage == 'series_b'",
+          "derivation": "COUNT(*)",
+          "rows_matched": 2824
+        }
+      ],
+      "failure_mode_target": [
+        "MEET_SPARSE_STAGE",
+        "MEET_FILTER_BEFORE_RETRIEVAL"
+      ],
+      "metadata_ref": [
+        "10",
+        "3.2"
+      ],
+      "semantic_stress": false,
+      "notes": "Correct = 2,824. The stage value never appears in the summary text (0 of 2,824 series_b summaries mention it), so any answer built from text retrieval returns roughly 0."
+    },
+    {
+      "id": "MEET-06",
+      "category": "meeting_retrieval",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Which meetings did Sanjay López attend?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "attendee": "Sanjay López"
+      },
+      "expected_operation": "attendee match on accented name",
+      "expected_answer": {
+        "type": "id_set",
+        "value": [
+          2,
+          348,
+          1100,
+          1240,
+          2050,
+          2334,
+          3560,
+          6041,
+          8716,
+          13658,
+          16485,
+          17056,
+          19270,
+          19916
+        ]
+      },
+      "answer_summary": "14 meetings: [2, 348, 1100, 1240, 2050, 2334, 3560, 6041, 8716, 13658, 16485, 17056, 19270, 19916]",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "meeting_ids": [
+            2,
+            348,
+            1100,
+            1240,
+            2050,
+            2334,
+            3560,
+            6041,
+            8716,
+            13658,
+            16485,
+            17056,
+            19270,
+            19916
+          ],
+          "field": "attendees",
+          "note": "stored as 'Sanjay LÃ³pez' (mojibake); canonical form 'Sanjay López'"
+        }
+      ],
+      "failure_mode_target": [
+        "MEET_ENCODING"
+      ],
+      "metadata_ref": [
+        "A11",
+        "E1"
+      ],
+      "semantic_stress": false,
+      "notes": "Ground truth uses the repaired attendee text: 14 meetings. In the raw workbook the name is stored as 'Sanjay LÃ³pez', so an exact match on 'López' returns 0 on RAW text. Names 'Sanjay Lopez' (no accent) match nothing. This question measures encoding impact (A11); expected evidence is the same for RAW and REPAIRED arms."
+    },
+    {
+      "id": "MEET-07",
+      "category": "meeting_retrieval",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "In client A12346's meetings, which ones flag the absence of independent directors on the board?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "A12346"
+      },
+      "expected_operation": "entity filter first, then phrase retrieval",
+      "expected_answer": {
+        "type": "id_set",
+        "value": [
+          4147,
+          5506,
+          11756,
+          12801,
+          13181,
+          17742
+        ]
+      },
+      "answer_summary": "6 meetings: [4147, 5506, 11756, 12801, 13181, 17742]",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "meeting_ids": [
+            4147,
+            5506,
+            11756,
+            12801,
+            13181,
+            17742
+          ],
+          "client_id": "A12346",
+          "phrase": "absence of independent directors"
+        }
+      ],
+      "failure_mode_target": [
+        "MEET_FILTER_BEFORE_RETRIEVAL",
+        "MEET_REPETITIVE_TEXT"
+      ],
+      "metadata_ref": [
+        "10"
+      ],
+      "semantic_stress": false,
+      "notes": "Lexical control: the question uses the summary's own words, so lexical retrieval should succeed. The phrase occurs in 5,623 of 20,000 summaries overall, so it only works when restricted to client A12346 first (23 meetings). Evidence: [4147, 5506, 11756, 12801, 13181, 17742]."
+    },
+    {
+      "id": "MEET-08",
+      "category": "meeting_retrieval",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "In client D12349's meetings, which ones raised concern that the company has no full-time finance chief and relies on outside providers for cash management?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "D12349"
+      },
+      "expected_operation": "entity filter first, then semantic retrieval",
+      "expected_answer": {
+        "type": "id_set",
+        "value": [
+          3664,
+          5791,
+          9932
+        ]
+      },
+      "answer_summary": "3 meetings: [3664, 5791, 9932]",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "meeting_ids": [
+            3664,
+            5791,
+            9932
+          ],
+          "client_id": "D12349",
+          "evidence_sentence": "…the sponsor currently lacks a dedicated CFO and is outsourcing treasury functions, which increases execution risk."
+        }
+      ],
+      "failure_mode_target": [
+        "SEM_PARAPHRASE",
+        "MEET_FILTER_BEFORE_RETRIEVAL"
+      ],
+      "metadata_ref": [
+        "A11"
+      ],
+      "semantic_stress": true,
+      "notes": "Semantic stress test. Intended evidence: the sentence 'the sponsor currently lacks a dedicated CFO and is outsourcing treasury functions'. The question says 'no full-time finance chief' (for 'lacks a dedicated CFO') and 'outside providers for cash management' (for 'outsourcing treasury functions'). Content-word overlap with the evidence sentence: none. Lexical retrieval is expected to struggle. Evidence set = the 3 D12349 meetings containing that sentence: [3664, 5791, 9932].",
+      "semantic_detail": {
+        "evidence_sentence": "Operational readiness was discussed at length: the sponsor currently lacks a dedicated CFO and is outsourcing treasury functions, which increases execution risk.",
+        "shared_content_words": [],
+        "lexical_control": "MEET-07"
+      }
+    },
+    {
+      "id": "MEET-10",
+      "category": "meeting_retrieval",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "In client A12346's meetings, which one discusses sensitivity to a ±128 bps change in growth?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "A12346",
+        "value": "±128 bps"
+      },
+      "expected_operation": "entity filter, then exact numeric phrase with ± sign",
+      "expected_answer": {
+        "type": "id_set",
+        "value": [
+          5506
+        ]
+      },
+      "answer_summary": "Meeting 5506 (2025-08-10)",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "meeting_ids": [
+            5506
+          ],
+          "client_id": "A12346",
+          "note": "stored as 'Â±128 bps' (mojibake); canonical '±128 bps'"
+        }
+      ],
+      "failure_mode_target": [
+        "MEET_ENCODING"
+      ],
+      "metadata_ref": [
+        "A11",
+        "E1"
+      ],
+      "semantic_stress": false,
+      "notes": "Encoding test on the summary column. The raw text contains 'Â±128', so an exact match on '±128' fails on RAW text and succeeds after repair. The number alone would still match. Evidence: meeting [5506] (2025-08-10). Expected evidence is the same for both arms (A11)."
+    },
+    {
+      "id": "HYB-01",
+      "category": "hybrid",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "For client A12345, what is the latest CI Total MOIC and when was the client's most recent meeting?",
+      "expected_source": [
+        "performance_data",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "A12345"
+      },
+      "expected_operation": "latest_snapshot_per_client (performance_data) for CI_Total_MOIC + MAX(date) from meeting_notes_20k as the last-met date, reported separately",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "ci_total_moic_raw": "0.78x",
+          "moic_as_of_date": "2024-10-25",
+          "latest_meeting_date": "2026-03-13",
+          "latest_meeting_id": 11640
+        }
+      },
+      "answer_summary": "MOIC 0.78x as of 2024-10-25; last met = latest meeting 2026-03-13 (id 11640) from meeting_notes_20k, not Client_Last_Met_Date",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "Client_Id == 'A12345' AND IsGroup_Flag == 'N'",
+          "derivation": "latest row",
+          "rows_matched": 8
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "client_id": "A12345",
+          "derivation": "MAX(date)",
+          "meeting_id": 11640
+        }
+      ],
+      "failure_mode_target": [
+        "HYB_DATE_COVERAGE",
+        "PERF_LATEST_PER_CLIENT"
+      ],
+      "metadata_ref": [
+        "A6",
+        "8",
+        "T6"
+      ],
+      "semantic_stress": false,
+      "notes": "Agreed rule: 'last met' = the latest meeting date in meeting_notes_20k; Client_Last_Met_Date is not silently substituted. Performance: 0.78x as of 2024-10-25. Meetings: latest 2026-03-13 (meeting 11640), which is later than the MOIC snapshot, so the MOIC must not be described as current at the meeting date. The performance sheet's Client_Last_Met_Date on that snapshot is 2018-09-18; it may be mentioned only when labelled as a separate field that disagrees.",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "the latest CI_Total_MOIC from performance_data for A12345 (0.78x) with its as-of date (2024-10-25)",
+          "'most recent meeting' answered as the latest meeting date in meeting_notes_20k (2026-03-13, meeting 11640), with meeting_notes_20k named as the source"
+        ],
+        "must_not": [
+          "use performance_data.Client_Last_Met_Date as the last-met date (its value on A12345's latest snapshot is 2018-09-18)",
+          "silently substitute Client_Last_Met_Date for the meeting date",
+          "present the MOIC as current at the time of the 2026-03-13 meeting"
+        ],
+        "may": [
+          "mention performance_data.Client_Last_Met_Date only if it is explicitly labelled as a separate performance-sheet field that disagrees with the meeting date"
+        ],
+        "reference_facts": {
+          "last_met_date": "2026-03-13",
+          "last_met_meeting_id": 11640,
+          "moic_as_of_date": "2024-10-25",
+          "client_last_met_date_on_latest_snapshot_not_to_be_used": "2018-09-18"
+        }
+      }
+    },
+    {
+      "id": "HYB-02",
+      "category": "hybrid",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "How many investment records and how many meetings does client B12346 have?",
+      "expected_source": [
+        "Investments_data_50k",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "B12346"
+      },
+      "expected_operation": "count per source at its own grain, no join",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "investment_records": 216,
+          "meetings": 22
+        },
+        "wrong_values": [
+          {
+            "value": 4752,
+            "why": "row count of the investments x meetings join"
+          }
+        ]
+      },
+      "answer_summary": "216 investment records; 22 meetings",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "client_id == 'B12346'",
+          "derivation": "COUNT(*)",
+          "rows_matched": 216
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "filter": "client_id == 'B12346'",
+          "derivation": "COUNT(*)",
+          "rows_matched": 22
+        }
+      ],
+      "failure_mode_target": [
+        "HYB_ROW_MULTIPLICATION",
+        "HYB_AGG_BEFORE_COMBINE"
+      ],
+      "metadata_ref": [
+        "A12",
+        "2.3"
+      ],
+      "semantic_stress": false,
+      "notes": "Correct: 216 investment records and 22 meetings. A row-level join on client_id returns 4,752 rows, and counting it gives that number for both facts."
+    },
+    {
+      "id": "HYB-03",
+      "category": "hybrid",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "What is the total USD investment amount for client C12355, and which company and sector did their most recent meeting involve?",
+      "expected_source": [
+        "Investments_data_50k",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "C12355"
+      },
+      "expected_operation": "sum at investment grain + latest meeting lookup, combined only after aggregation",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "total_usd": 437086022.21,
+          "meeting_id": 8038,
+          "meeting_date": "2026-03-01",
+          "company": "BlueOak Partners",
+          "sector": "manufacturing"
+        },
+        "tolerance_abs": 0.01,
+        "wrong_values": [
+          {
+            "value": 8304634421.99,
+            "why": "sum multiplied by the number of meetings"
+          }
+        ]
+      },
+      "answer_summary": "437,086,022.21 USD; latest meeting 8038 (2026-03-01): BlueOak Partners, manufacturing",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "client_id == 'C12355'",
+          "derivation": "SUM(Investment_Amount_USD_for_agg)",
+          "rows_matched": 251
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "client_id": "C12355",
+          "meeting_id": 8038,
+          "derivation": "row with MAX(date)"
+        }
+      ],
+      "failure_mode_target": [
+        "HYB_ROW_MULTIPLICATION",
+        "HYB_AGG_BEFORE_COMBINE"
+      ],
+      "metadata_ref": [
+        "A12"
+      ],
+      "semantic_stress": false,
+      "notes": "Total = 437,086,022.21 USD. Latest meeting: 8038 on 2026-03-01 with BlueOak Partners (sector manufacturing, region EMEA). Summing after a row-level join multiplies the total by the meeting count (19) = 8,304,634,421.99. company is a meeting counterparty, not one of the client's deals."
+    },
+    {
+      "id": "HYB-05",
+      "category": "hybrid",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "What is the latest CI Total MOIC for client B12463, and what action items were recorded at their most recent meeting?",
+      "expected_source": [
+        "performance_data",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "B12463"
+      },
+      "expected_operation": "performance lookup (no rows) + latest meeting lookup",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "state that no performance data exists for B12463",
+          "report meeting 706 dated 2026-01-12",
+          "the recorded action item: Action: introduce legal counsel to start drafting a mutually acceptable shareholder agreement within 10 business days. | Action: schedule a management Q&A to address customer concentration and AR aging concerns."
+        ],
+        "must_not": [
+          "say the client does not exist",
+          "invent a MOIC value",
+          "treat missing performance as 0"
+        ],
+        "reference_facts": {
+          "latest_meeting_id": 706,
+          "latest_meeting_date": "2026-01-12",
+          "action_items": "Action: introduce legal counsel to start drafting a mutually acceptable shareholder agreement within 10 business days. | Action: schedule a management Q&A to address customer concentration and AR aging concerns."
+        }
+      },
+      "answer_summary": "No performance data (meeting-only client); latest meeting 706 on 2026-01-12",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "filter": "Client_Id == 'B12463'",
+          "rows_matched": 0
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "client_id": "B12463",
+          "meeting_id": 706,
+          "date": "2026-01-12",
+          "action_items": "Action: introduce legal counsel to start drafting a mutually acceptable shareholder agreement within 10 business days. | Action: schedule a management Q&A to address customer concentration and AR aging concerns."
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_MEETING_ONLY",
+        "HYB_POPULATION_GAP"
+      ],
+      "metadata_ref": [
+        "A8",
+        "2.4",
+        "R1"
+      ],
+      "semantic_stress": false,
+      "notes": "B12463 is meeting-only. The performance part must be reported as no performance data for this client (not 'client does not exist', not 0x). The meeting part is answerable. The latest meeting has recorded action items, quoted in the evidence."
+    },
+    {
+      "id": "HYB-06",
+      "category": "hybrid",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "How many of client A12345's meetings took place after its latest performance snapshot, and what are the two dates?",
+      "expected_source": [
+        "performance_data",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "A12345"
+      },
+      "expected_operation": "latest snapshot date (performance) compared with meeting dates",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "latest_snapshot_date": "2024-10-25",
+          "latest_meeting_date": "2026-03-13",
+          "meetings_after_snapshot": 8,
+          "total_meetings": 23
+        }
+      },
+      "answer_summary": "Snapshot 2024-10-25; 8 of 23 meetings are later (latest 2026-03-13)",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "client_id": "A12345",
+          "latest_as_of_date": "2024-10-25"
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "filter": "client_id == 'A12345' AND date > '2024-10-25'",
+          "derivation": "COUNT(*)",
+          "rows_matched": 8
+        }
+      ],
+      "failure_mode_target": [
+        "HYB_DATE_COVERAGE"
+      ],
+      "metadata_ref": [
+        "5",
+        "T5"
+      ],
+      "semantic_stress": false,
+      "notes": "Latest snapshot 2024-10-25; latest meeting 2026-03-13; 8 of 23 meetings are later than the snapshot. The performance data should not be described as current at the time of the later meetings."
+    },
+    {
+      "id": "HYB-07",
+      "category": "hybrid",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "How many meetings were held by relationship manager Priya Sharma?",
+      "expected_source": [
+        "Investments_data_50k",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "rm": "Priya Sharma"
+      },
+      "expected_operation": "not answerable: meetings carry no RM field",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "state that meetings cannot be attributed to an RM because the meeting data has no RM field"
+        ],
+        "must_not": [
+          "output a meeting count by joining AccountRM to meetings",
+          "count attendee-name matches (15) as 'meetings held'"
+        ],
+        "reference_facts": {
+          "attendee_name_matches_priya_sharma": 15
+        }
+      },
+      "answer_summary": "Not answerable: meetings have no RM field",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "columns": [
+            "meeting_id",
+            "date",
+            "attendees",
+            "company",
+            "sector",
+            "region",
+            "investment_stage",
+            "deal_size_estimate",
+            "summary",
+            "action_items",
+            "summary_char_length",
+            "client_id",
+            "group_id"
+          ],
+          "note": "no RM column"
+        },
+        {
+          "sheet": "Investments_data_50k",
+          "field": "AccountRM",
+          "note": "record-level, investments only"
+        }
+      ],
+      "failure_mode_target": [
+        "HYB_AGG_BEFORE_COMBINE",
+        "UNDOCUMENTED_SEMANTICS",
+        "INV_RM_RECORD_LEVEL"
+      ],
+      "metadata_ref": [
+        "A2",
+        "12"
+      ],
+      "semantic_stress": false,
+      "notes": "There is no link between RMs and meetings. attendees is free text (an RM's full name appears as an attendee in 15 meetings for Priya Sharma, which does not establish that she 'held' them). The correct answer is that meetings cannot be attributed to an RM from this data."
+    },
+    {
+      "id": "HYB-09",
+      "category": "hybrid",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Which clients with a latest CI Total MOIC below 1.0x had a meeting since 2026-01-01 where it came up that nobody in the company holds a permanent finance-chief role?",
+      "expected_source": [
+        "performance_data",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "threshold": 1.0,
+        "meeting_date_from": "2026-01-01"
+      },
+      "expected_operation": "latest_snapshot_per_client filter + entity/date-filtered semantic retrieval, intersect",
+      "expected_answer": {
+        "type": "id_set",
+        "value": [
+          "A12351",
+          "A12356",
+          "A12413",
+          "C12348",
+          "C12375",
+          "D12345"
+        ]
+      },
+      "answer_summary": "6 clients: ['A12351', 'A12356', 'A12413', 'C12348', 'C12375', 'D12345']",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "derivation": "clients with latest numeric CI_Total_MOIC < 1.0",
+          "count": 22
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "derivation": "meetings since 2026-01-01 containing 'lacks a dedicated CFO'",
+          "meeting_ids": [
+            169,
+            1058,
+            1174,
+            1200,
+            1534,
+            2820,
+            2944,
+            6761,
+            6838,
+            7003,
+            7051,
+            8048,
+            8339,
+            8828,
+            8986,
+            9005,
+            9050,
+            9150,
+            10303,
+            10329,
+            10755,
+            13310,
+            14019,
+            14319,
+            14376,
+            15063,
+            15700,
+            16393,
+            18330,
+            19126,
+            19835
+          ]
+        },
+        {
+          "intersection": [
+            "A12351",
+            "A12356",
+            "A12413",
+            "C12348",
+            "C12375",
+            "D12345"
+          ]
+        }
+      ],
+      "failure_mode_target": [
+        "SEM_PARAPHRASE",
+        "HYB_AGG_BEFORE_COMBINE",
+        "PERF_LATEST_PER_CLIENT",
+        "PERF_MOIC_TEXT"
+      ],
+      "metadata_ref": [
+        "A6",
+        "A7",
+        "A12"
+      ],
+      "semantic_stress": true,
+      "notes": "Semantic stress test inside a hybrid question. Evidence sentence: 'the sponsor currently lacks a dedicated CFO'; the question says 'nobody ... holds a permanent finance-chief role'. Correct set = 6 clients: ['A12351', 'A12356', 'A12413', 'C12348', 'C12375', 'D12345']. Structured filter yields 22 clients, so a system that finds the text but ignores the MOIC filter, or uses stale snapshots, returns more.",
+      "semantic_detail": {
+        "shared_content_words": [],
+        "evidence_sentence": "Operational readiness was discussed at length: the sponsor currently lacks a dedicated CFO and is outsourcing treasury functions, which increases execution risk.",
+        "lexical_control": "MEET-07"
+      }
+    },
+    {
+      "id": "HYB-10",
+      "category": "hybrid",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "For client D12376, list the deal names in its investment records and the sectors and companies in its meetings.",
+      "expected_source": [
+        "Investments_data_50k",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "D12376"
+      },
+      "expected_operation": "two independent distinct-lists; no cross-source join",
+      "expected_answer": {
+        "type": "object",
+        "value": {
+          "deal_names": [
+            "Atlas Private Equity II",
+            "BluePeak Venture II",
+            "BluePeak Venture III",
+            "Emerald Real Estate Fund",
+            "NorthBridge Growth Fund",
+            "Orion Infrastructure I",
+            "Orion Infrastructure IV",
+            "Summit Credit Opportunities"
+          ],
+          "sectors": [
+            "agritech",
+            "consumer goods",
+            "edtech",
+            "education (private schools)",
+            "fintech",
+            "healthcare",
+            "logistics",
+            "media & entertainment",
+            "real estate",
+            "renewables"
+          ],
+          "companies": [
+            "Astra Investments",
+            "Crescent Capital",
+            "GreenField Ventures",
+            "Harbor Fund",
+            "Helix Capital",
+            "IVC Capital",
+            "NorthStar FO",
+            "Pioneer LP",
+            "Quantum Growth",
+            "Redwood Partners",
+            "Summit Advisors"
+          ]
+        }
+      },
+      "answer_summary": "8 deal names; 10 sectors; 11 companies",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "client_id == 'D12376'",
+          "derivation": "DISTINCT deal_name",
+          "rows_matched": 285
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "filter": "client_id == 'D12376'",
+          "derivation": "DISTINCT sector, DISTINCT company",
+          "rows_matched": 18
+        }
+      ],
+      "failure_mode_target": [
+        "HYB_AGG_BEFORE_COMBINE",
+        "UNDOCUMENTED_SEMANTICS"
+      ],
+      "metadata_ref": [
+        "A5",
+        "4"
+      ],
+      "semantic_stress": false,
+      "notes": "Investments: 8 deal names. Meetings: 10 sectors and 11 companies over 18 meetings. company and deal_name never match (no overlap between the vocabularies); the answer must list them separately and not present a meeting company as one of the client's deals."
+    },
+    {
+      "id": "ADV-01",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Show me the investments for client 12345.",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "ambiguous_numeric": "12345",
+        "candidates": [
+          "A12345",
+          "B12345",
+          "C12345",
+          "D12345"
+        ]
+      },
+      "expected_operation": "entity disambiguation before any query",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "identify the four candidates A12345, B12345, C12345, D12345",
+          "ask which client is meant, or present the four separately and labelled"
+        ],
+        "must_not": [
+          "silently pick one client",
+          "sum or merge the four clients' records as one client"
+        ],
+        "reference_facts": {
+          "investment_records_per_candidate": {
+            "A12345": 258,
+            "B12345": 273,
+            "C12345": 263,
+            "D12345": 267
+          }
+        }
+      },
+      "answer_summary": "Ambiguous: A12345, B12345, C12345, D12345 all exist",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "candidates_found": {
+            "A12345": 258,
+            "B12345": 273,
+            "C12345": 263,
+            "D12345": 267
+          }
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_AMBIGUOUS_ID"
+      ],
+      "metadata_ref": [
+        "4"
+      ],
+      "semantic_stress": false,
+      "notes": "The numeric part 12345 exists with prefixes A, B, C and D (one group, 346). The system must surface the ambiguity (ask or list the four IDs) and must not silently choose one or merge them."
+    },
+    {
+      "id": "ADV-02",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "How many investment records does Client A12345 Holdings have?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "client_name_form": "Client A12345 Holdings",
+        "client_id": "A12345"
+      },
+      "expected_operation": "resolve AccountName form to client_id, then count",
+      "expected_answer": {
+        "type": "integer",
+        "value": 258
+      },
+      "answer_summary": "258 records (same as client A12345)",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "AccountName == 'Client A12345 Holdings'",
+          "derivation": "COUNT(*)",
+          "rows_matched": 258
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_NAME_FORMS"
+      ],
+      "metadata_ref": [
+        "4",
+        "3.1"
+      ],
+      "semantic_stress": false,
+      "notes": "AccountName 'Client A12345 Holdings' maps 1:1 to client A12345, so the answer equals the id-based count (258). Other forms of the same client: 'Client_A12345' (Client Name) and 'A12345'. Answering 'not found' or 0 is the failure. What 'account' denotes is undocumented, so the answer should not add semantic claims."
+    },
+    {
+      "id": "ADV-03",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Tell me about Summit.",
+      "expected_source": [
+        "Investments_data_50k",
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "ambiguous_name": "Summit",
+        "candidates": [
+          "Summit Credit Opportunities (deal_name)",
+          "Summit Advisors (meeting company)"
+        ]
+      },
+      "expected_operation": "entity disambiguation across sheets",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "mention both Summit Credit Opportunities (deal) and Summit Advisors (meeting company)",
+          "keep them separate or ask which is meant"
+        ],
+        "must_not": [
+          "treat them as one entity",
+          "assert that Summit Advisors is the counterparty of the Summit Credit Opportunities deal"
+        ],
+        "reference_facts": {
+          "summit_credit_opportunities_records": 8179,
+          "summit_advisors_meetings": 1358
+        }
+      },
+      "answer_summary": "Ambiguous: deal 'Summit Credit Opportunities' vs meeting company 'Summit Advisors'",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "deal_name": "Summit Credit Opportunities",
+          "records": 8179
+        },
+        {
+          "sheet": "meeting_notes_20k",
+          "company": "Summit Advisors",
+          "meetings": 1358
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_AMBIGUOUS_NAME"
+      ],
+      "metadata_ref": [
+        "4"
+      ],
+      "semantic_stress": false,
+      "notes": "'Summit' matches a deal in the investments sheet and a counterparty company in the meetings sheet. They are different entity types with no documented link. The system must ask or present both separately and must not merge them."
+    },
+    {
+      "id": "ADV-05",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "What is the total investment amount across all records in the original currency?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "field": "Investment_Amount_Natural_Currency"
+      },
+      "expected_operation": "refuse mixed-currency sum; offer USD field or per-currency totals",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "state that amounts in different currencies cannot be added",
+          "offer the USD total or per-currency totals"
+        ],
+        "must_not": [
+          "present 125,633,546,451 as the total"
+        ],
+        "reference_facts": {
+          "usd_total": 91123356224.62,
+          "naive_natural_sum": 125633546451.0,
+          "currencies": [
+            "AED",
+            "EUR",
+            "GBP",
+            "INR",
+            "SGD",
+            "USD"
+          ]
+        }
+      },
+      "answer_summary": "Refuse mixed-currency sum; USD total = 91,123,356,224.62",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "all rows",
+          "derivation": "COUNT(DISTINCT Natural_Currency_Code), SUM(USD field)",
+          "rows_matched": 50000
+        }
+      ],
+      "failure_mode_target": [
+        "INV_USD_VS_NATURAL"
+      ],
+      "metadata_ref": [
+        "3.1"
+      ],
+      "semantic_stress": false,
+      "notes": "Original-currency amounts span 6 currencies (AED, EUR, GBP, INR, SGD, USD); a single sum (125,633,546,451) is meaningless. The system should refuse the single number and offer per-currency totals or the USD total (91,123,356,224.62)."
+    },
+    {
+      "id": "ADV-06",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Which clients did we meet recently?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "relative_time": "recently"
+      },
+      "expected_operation": "resolve the runtime current date; interpret 'recently' as a stated window ending at that date over meeting_notes_20k.date (last met = latest meeting date per client); qualify against source coverage",
+      "validation_rule": {
+        "type": "behavior",
+        "runtime_dependent": true,
+        "must_include": [
+          "states the reference date used, and that it is the runtime current date",
+          "states the window it takes 'recently' to mean (the data does not define one, so the system must state its choice)",
+          "uses the latest meeting date per client from meeting_notes_20k as 'last met'",
+          "states that the meeting data ends on 2026-03-13 and, whenever the window ends after that date, explicitly qualifies that the requested period exceeds source coverage and that the data does not show whether meetings occurred after 2026-03-13",
+          "if no client's latest meeting falls inside the window, says so instead of returning older meetings as 'recent'"
+        ],
+        "must_not": [
+          "treat the latest date in the data (2026-03-13) as 'today'",
+          "imply that the datasets contain data through the runtime date",
+          "use performance_data.Client_Last_Met_Date or As_Of_Date as the last-met date",
+          "silently choose a window without stating it"
+        ],
+        "reference_facts": {
+          "meeting_coverage_start": "2022-01-01",
+          "meeting_coverage_end": "2026-03-13",
+          "not_used_performance_client_last_met_end": "2025-01-16",
+          "coverage_check": "gap_days = runtime_date - 2026-03-13; if gap_days > 0 the coverage qualification is mandatory",
+          "illustration": "at the benchmark authoring date, 2026-09-26, the gap is 197 days"
+        }
+      },
+      "answer_summary": "Reference date = runtime current date; window stated; last met from meeting_notes_20k; qualify when the window exceeds coverage (meetings end 2026-03-13)",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "field": "date",
+          "max_date": "2026-03-13",
+          "use": "the last-met source"
+        },
+        {
+          "sheet": "performance_data",
+          "field": "Client_Last_Met_Date",
+          "max_date": "2025-01-16",
+          "use": "reference only; not the last-met source"
+        },
+        {
+          "sheet": "performance_data",
+          "field": "As_Of_Date",
+          "max_date": "2025-01-22",
+          "use": "reference only; not a meeting date"
+        }
+      ],
+      "failure_mode_target": [
+        "TIME_ANCHOR",
+        "HYB_DATE_COVERAGE"
+      ],
+      "metadata_ref": [
+        "5",
+        "8",
+        "T5"
+      ],
+      "semantic_stress": false,
+      "notes": "Agreed rule: relative dates use the runtime current date as the reference, and the answer must not imply the data runs through today. Meeting data ends on 2026-03-13, so for any runtime date after that the answer must explicitly say the requested period exceeds source coverage. The ground truth is therefore a rule, not a fixed list of clients: it depends on the runtime date and on the window the system states. Last met comes from meeting_notes_20k (same rule as HYB-01), not from Client_Last_Met_Date."
+    },
+    {
+      "id": "ADV-07",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "Who is cgomez@investcorp.com and how many investment records do they manage?",
+      "expected_source": [
+        "Investments_data_50k"
+      ],
+      "expected_entity": {
+        "email": "cgomez@investcorp.com"
+      },
+      "expected_operation": "non-authoritative field; do not resolve RM via email",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "state that the email field is unreliable/contradicts AccountRM and cannot identify the RM",
+          "if it reports AccountRM = Carlos Gomez counts, label them as record-level AccountRM counts"
+        ],
+        "must_not": [
+          "say the email owner manages 9,957 records",
+          "silently map the email to Carlos Gomez"
+        ],
+        "reference_facts": {
+          "records_with_email": 9957,
+          "AccountRM_breakdown_for_email": {
+            "Sara Khan": 2040,
+            "Daniel Lee": 2038,
+            "Rahul Mehta": 2029,
+            "Carlos Gomez": 1934,
+            "Priya Sharma": 1916
+          },
+          "records_AccountRM_Carlos_Gomez": 10032
+        }
+      },
+      "answer_summary": "Email is non-authoritative; it maps to all five AccountRM names",
+      "expected_evidence": [
+        {
+          "sheet": "Investments_data_50k",
+          "filter": "AccountRMEmail == 'cgomez@investcorp.com'",
+          "derivation": "GROUP BY AccountRM COUNT(*)",
+          "rows_matched": 9957
+        }
+      ],
+      "failure_mode_target": [
+        "ENT_NAME_FORMS",
+        "INV_RM_RECORD_LEVEL",
+        "UNDOCUMENTED_SEMANTICS"
+      ],
+      "metadata_ref": [
+        "A3",
+        "S6"
+      ],
+      "semantic_stress": false,
+      "notes": "A3: AccountRMEmail is non-authoritative. The email appears on 9,957 records, and only 1,934 of them have AccountRM = Carlos Gomez; the rest carry the other four RM names. The system must not equate the email with Carlos Gomez silently and must not count records 'managed' via the email field."
+    },
+    {
+      "id": "ADV-08",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "medium",
+      "split": "visible",
+      "question": "What does the L3Y_DIS field mean in the performance data?",
+      "expected_source": [
+        "performance_data"
+      ],
+      "expected_entity": {
+        "abbreviation": "L3Y_DIS",
+        "columns": [
+          "CI_L3Y_DIS_Amount",
+          "RE_L3Y_DIS_Amount"
+        ]
+      },
+      "expected_operation": "undocumented-semantics disclosure",
+      "validation_rule": {
+        "type": "behavior",
+        "must_include": [
+          "state that the meaning is not documented"
+        ],
+        "must_not": [
+          "expand L3Y_DIS into a definition as if it were documented"
+        ],
+        "reference_facts": {
+          "columns": [
+            "CI_L3Y_DIS_Amount",
+            "RE_L3Y_DIS_Amount"
+          ]
+        }
+      },
+      "answer_summary": "Undocumented: state so; do not invent an expansion",
+      "expected_evidence": [
+        {
+          "sheet": "performance_data",
+          "columns": [
+            "CI_L3Y_DIS_Amount",
+            "RE_L3Y_DIS_Amount"
+          ],
+          "documentation": "none"
+        }
+      ],
+      "failure_mode_target": [
+        "UNDOCUMENTED_SEMANTICS"
+      ],
+      "metadata_ref": [
+        "3.3",
+        "0"
+      ],
+      "semantic_stress": false,
+      "notes": "The abbreviations CY, FR, SI, L3Y and DIS are undocumented (data dictionary 3.3). The answer must say the meaning is not documented. It may list the two columns that carry the suffix, but must not expand it (for example 'last 3 years distributions')."
+    },
+    {
+      "id": "ADV-10",
+      "category": "adversarial_edge_semantic",
+      "difficulty": "hard",
+      "split": "visible",
+      "question": "For client A12353, which meetings raised that part of the income arrives in dollars while costs are paid in local money?",
+      "expected_source": [
+        "meeting_notes_20k"
+      ],
+      "expected_entity": {
+        "client_id": "A12353"
+      },
+      "expected_operation": "entity filter first, then semantic retrieval",
+      "expected_answer": {
+        "type": "id_set",
+        "value": [
+          7568,
+          19047,
+          19238
+        ]
+      },
+      "answer_summary": "3 meetings: [7568, 19047, 19238]",
+      "expected_evidence": [
+        {
+          "sheet": "meeting_notes_20k",
+          "meeting_ids": [
+            7568,
+            19047,
+            19238
+          ],
+          "client_id": "A12353",
+          "evidence_sentence": "Currency exposure is significant with ~30% of revenues denominated in USD but expenses largely local; a hedging policy and scenario P&L were requested."
+        }
+      ],
+      "failure_mode_target": [
+        "SEM_PARAPHRASE",
+        "MEET_FILTER_BEFORE_RETRIEVAL"
+      ],
+      "metadata_ref": [
+        "A11"
+      ],
+      "semantic_stress": true,
+      "notes": "Semantic stress test. Evidence: 'Currency exposure is significant with ~30% of revenues denominated in USD but expenses largely local'. The question says 'income arrives in dollars' and 'costs are paid in local money', avoiding 'currency', 'revenues', 'USD' and 'expenses'. Content-word overlap with the evidence sentence: ['local']. Evidence set = 3 A12353 meetings: [7568, 19047, 19238].",
+      "semantic_detail": {
+        "evidence_sentence": "Currency exposure is significant with ~30% of revenues denominated in USD but expenses largely local; a hedging policy and scenario P&L were requested.",
+        "shared_content_words": [
+          "local"
+        ],
+        "lexical_control": "MEET-07"
+      }
+    }
+  ]
+}

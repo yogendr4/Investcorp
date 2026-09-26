@@ -21,3 +21,8 @@ Thumbs.db
 
 # Assignment reference
 Investcorp_AI_Engineer_JD.pdf
+
+# Derived data (generated SQLite database)
+data/derived/
+*.sqlite
+*.sqlite.building
