@@ -1,0 +1,5336 @@
+{
+ "setup": {
+  "questions": 40,
+  "split": "visible",
+  "holdout_used": false
+ },
+ "results": [
+  {
+   "id": "INV-01",
+   "category": "investment",
+   "difficulty": "medium",
+   "question": "How many investment records does client A12345 have for the Emerald Real Estate Fund?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     },
+     {
+      "text": "Emerald Real Estate Fund",
+      "entity_type": "deal_name",
+      "status": "resolved",
+      "canonical": "Emerald Real Estate Fund",
+      "match_rule": "exact_name",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345",
+     "deal_name": "Emerald Real Estate Fund"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client A12345 has 48 investment records for the Emerald Real Estate Fund [investments]. This is a count of records (rows), not a count of distinct deals or clients.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 14801.0,
+   "timing_ms": {
+    "resolution_ms": 2134.1,
+    "routing_ms": 0.4,
+    "structured_ms": 7078.9,
+    "synthesis_ms": 5586.9,
+    "validation_ms": 0.6,
+    "total_ms": 14801.0
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(*) AS investment_record_count FROM investments WHERE client_id = 'A12345' AND deal_name = 'Emerald Real Estate Fund'",
+    "columns": [
+     "investment_record_count"
+    ],
+    "rows": [
+     [
+      48
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "INV-02",
+   "category": "investment",
+   "difficulty": "medium",
+   "question": "How many investment records does client C12355 have, and how many distinct deal names and distinct deal IDs do those records cover?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "C12355",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "C12355",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "C12355"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client C12355 has 251 investment records, covering 9 distinct deal names and 8 distinct deal IDs [investments].\n\nThe counts differ (9 names vs. 8 IDs), so at least one deal ID is associated with more than one deal name, or the names are otherwise not one-to-one with IDs. The evidence does not show which names or IDs are involved, so I can't say more about the reason.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 13024.3,
+   "timing_ms": {
+    "resolution_ms": 1.0,
+    "routing_ms": 0.9,
+    "structured_ms": 5656.6,
+    "synthesis_ms": 7365.2,
+    "validation_ms": 0.6,
+    "total_ms": 13024.3
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(*) AS record_count, COUNT(DISTINCT deal_name) AS distinct_deal_names, COUNT(DISTINCT deal_id) AS distinct_deal_ids FROM investments WHERE client_id = 'C12355'",
+    "columns": [
+     "record_count",
+     "distinct_deal_names",
+     "distinct_deal_ids"
+    ],
+    "rows": [
+     [
+      251,
+      9,
+      8
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "INV-03",
+   "category": "investment",
+   "difficulty": "medium",
+   "question": "What is the total USD amount across all of client A12345's investment records?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "The total USD amount across all of client A12345's investment records is about 472,004,607.02 USD (value as given, not rounded) [investments].\n\nThe evidence returns only this single summed figure. It does not show how many records make up the total or any per-record amounts.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12156.8,
+   "timing_ms": {
+    "resolution_ms": 0.8,
+    "routing_ms": 0.4,
+    "structured_ms": 5898.3,
+    "synthesis_ms": 6256.4,
+    "validation_ms": 0.8,
+    "total_ms": 12156.8
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT SUM(investment_amount_usd_for_agg) AS total_usd FROM investments WHERE client_id = 'A12345'",
+    "columns": [
+     "total_usd"
+    ],
+    "rows": [
+     [
+      472004607.02
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "INV-04",
+   "category": "investment",
+   "difficulty": "hard",
+   "question": "Which relationship manager manages client B12346?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "B12346",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "B12346",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "B12346"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "The evidence does not say which relationship manager manages client B12346. The investments result only lists record counts per account RM, with no client_id column, so it can't be tied to B12346: Sara Khan (53), Carlos Gomez (44), Rahul Mehta (44), Daniel Lee (39) and Priya Sharma (36) [investments].\n\nAn RM belongs to a record, not to a client, so a client could have several records with different RMs. To answer, I would need the investment records filtered to client B12346, showing their account_rm values.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12486.6,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.3,
+    "structured_ms": 5844.7,
+    "synthesis_ms": 6640.3,
+    "validation_ms": 0.7,
+    "total_ms": 12486.6
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT account_rm, COUNT(*) AS record_count FROM investments WHERE client_id = 'B12346' GROUP BY account_rm ORDER BY record_count DESC, account_rm ASC",
+    "columns": [
+     "account_rm",
+     "record_count"
+    ],
+    "rows": [
+     [
+      "Sara Khan",
+      53
+     ],
+     [
+      "Carlos Gomez",
+      44
+     ],
+     [
+      "Rahul Mehta",
+      44
+     ],
+     [
+      "Daniel Lee",
+      39
+     ],
+     [
+      "Priya Sharma",
+      36
+     ]
+    ],
+    "row_count": 5
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "all 5 RM names with their record counts"
+     ],
+     "must_not": [
+      "state a single RM as 'the' manager of the client",
+      "use AccountRMEmail, RM_Alias or AccountOwnerId"
+     ],
+     "reference_facts": {
+      "Sara Khan": 53,
+      "Rahul Mehta": 44,
+      "Carlos Gomez": 44,
+      "Daniel Lee": 39,
+      "Priya Sharma": 36
+     }
+    },
+    "expected_summary": "No single RM: Sara Khan 53, Rahul Mehta 44, Carlos Gomez 44, Daniel Lee 39, Priya Sharma 36",
+    "observation": "All 5 RMs and counts are given, but the answer still says the result has 'no client_id column, so it can't be tied to B12346', although the SQL was filtered to B12346 (the synthesizer is not shown the query). Same pattern as Baseline.",
+    "keyword_hints_not_a_score": {
+     "Sara Khan": true,
+     "Carlos Gomez": true,
+     "Rahul Mehta": true,
+     "Daniel Lee": true,
+     "Priya Sharma": true
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": [
+     "candidate answer_synthesis failure if review fails: contradicts the SQL filter"
+    ]
+   }
+  },
+  {
+   "id": "INV-06",
+   "category": "investment",
+   "difficulty": "hard",
+   "question": "How many clients are Closed?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "field": "ClientStatus",
+     "value": "Closed"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R6_STATUS",
+    "success": true
+   },
+   "answer": "The evidence returns a count of 192 for clients with a Closed status [investments]. The evidence does not show the exact query, so I can't say more about how \"Closed\" was matched. Status belongs to individual records, so this figure counts distinct clients that have at least one record with that status, not clients as a whole.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12998.4,
+   "timing_ms": {
+    "resolution_ms": 0.1,
+    "routing_ms": 0.2,
+    "structured_ms": 6153.0,
+    "synthesis_ms": 6844.1,
+    "validation_ms": 0.9,
+    "total_ms": 12998.4
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(DISTINCT client_id) AS client_count FROM investments WHERE client_status = 'Closed'",
+    "columns": [
+     "client_count"
+    ],
+    "rows": [
+     [
+      192
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "192 clients with at least one Closed record and/or 12,488 Closed records",
+      "an explicit statement that investments ClientStatus is relationship/record-level and that a client has records under several statuses (no single client-wide status)",
+      "if performance status is mentioned at all, it is presented separately, labelled as performance_data Investment_Status_Name, with the note that this field has no 'Closed' value"
+     ],
+     "must_not": [
+      "report a client-level count of Closed clients without the record-level qualification",
+      "state or imply a single client-wide status for any client",
+      "answer the Closed question from performance Investment_Status_Name, or merge the two status fields into one figure",
+      "treat the absence of 'Closed' in performance status as evidence that clients are not Closed"
+     ],
+     "reference_facts": {
+      "distinct_clients_with_closed_record": 192,
+      "closed_records": 12488,
+      "total_clients": 192,
+      "performance_status": {
+       "field": "performance_data.Investment_Status_Name",
+       "has_closed_value": false,
+       "latest_snapshot_status_counts_192_clients": {
+        "Dormant": 73,
+        "Prospect": 62,
+        "Active": 57
+       },
+       "handling": "shown separately if mentioned; never a substitute for ClientStatus"
+      }
+     }
+    },
+    "expected_summary": "192 clients have >=1 Closed record (12,488 records); status is relationship/record-level; performance status (no Closed value) only if shown separately",
+    "observation": "192 clients with at least one Closed record is reported, with a record-level explanation; the count of Closed records (12,488) is not reported.",
+    "keyword_hints_not_a_score": {
+     "192": true,
+     "12,488": false,
+     "record-level|relationship-level|record level": false
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "INV-07",
+   "category": "investment",
+   "difficulty": "hard",
+   "question": "What is the total USD amount for the Orion Infrastructure I deal?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "Orion Infrastructure I",
+      "entity_type": "deal_name",
+      "status": "resolved",
+      "canonical": "Orion Infrastructure I",
+      "match_rule": "exact_name",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "deal_name": "Orion Infrastructure I"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "The total USD amount for the Orion Infrastructure I deal is 14,184,184,822.55 (about 14.18 billion, rounded) [investments].\n\nThe evidence is a single aggregated value, so it does not show how many records make up the total.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11582.3,
+   "timing_ms": {
+    "resolution_ms": 0.8,
+    "routing_ms": 4.6,
+    "structured_ms": 6042.0,
+    "synthesis_ms": 5534.2,
+    "validation_ms": 0.5,
+    "total_ms": 11582.3
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT SUM(investment_amount_usd_for_agg) AS total_usd FROM investments WHERE deal_name = 'Orion Infrastructure I'",
+    "columns": [
+     "total_usd"
+    ],
+    "rows": [
+     [
+      14184184822.55
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "INV-08",
+   "category": "investment",
+   "difficulty": "hard",
+   "question": "How many investment records carry deal ID DL100001, and which deal names appear on them?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "DL100001",
+      "entity_type": "deal_id",
+      "status": "resolved",
+      "canonical": "DL100001",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "deal_id": "DL100001"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "8,950 investment records carry deal ID DL100001 [investments]. Two deal names appear on them, and they are not collapsed:\n\n- NorthBridge Growth Fund: 8,356 records [investments]\n- Orion Infrastructure IV: 594 records [investments]",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11531.1,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.4,
+    "structured_ms": 6061.9,
+    "synthesis_ms": 5467.9,
+    "validation_ms": 0.5,
+    "total_ms": 11531.1
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT deal_name, COUNT(*) AS record_count, SUM(COUNT(*)) OVER () AS total_records FROM investments WHERE deal_id = 'DL100001' GROUP BY deal_name ORDER BY deal_name",
+    "columns": [
+     "deal_name",
+     "record_count",
+     "total_records"
+    ],
+    "rows": [
+     [
+      "NorthBridge Growth Fund",
+      8356,
+      8950
+     ],
+     [
+      "Orion Infrastructure IV",
+      594,
+      8950
+     ]
+    ],
+    "row_count": 2
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "INV-10",
+   "category": "investment",
+   "difficulty": "medium",
+   "question": "What is the total original-currency amount of all GBP-denominated investment records, and what is that in USD?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "field": "Natural_Currency_Code",
+     "value": "GBP"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "All GBP-denominated investment records total 20,880,959,986.0 in original currency (GBP) [investments]. The USD equivalent is 26,101,199,982.5 (rounded from 26,101,199,982.5 as given; no rounding needed) [investments].\n\nThe evidence does not state how many records make up this total, so I can't give a record count.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11854.8,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.5,
+    "structured_ms": 5535.2,
+    "synthesis_ms": 6318.1,
+    "validation_ms": 0.6,
+    "total_ms": 11854.8
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT SUM(investment_amount_natural_currency) AS total_gbp, SUM(investment_amount_usd_for_agg) AS total_usd FROM investments WHERE natural_currency_code = 'GBP'",
+    "columns": [
+     "total_gbp",
+     "total_usd"
+    ],
+    "rows": [
+     [
+      20880959986.0,
+      26101199982.5
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-01",
+   "category": "performance",
+   "difficulty": "medium",
+   "question": "What is client A12345's latest CI Current MOIC?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client A12345's latest CI Current MOIC is 1.33, from the snapshot as of 2024-10-25 [performance].",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 10496.9,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.3,
+    "structured_ms": 5270.0,
+    "synthesis_ms": 5225.7,
+    "validation_ms": 0.4,
+    "total_ms": 10496.9
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT client_id, as_of_date, ci_current_moic FROM performance_latest WHERE client_id = 'A12345'",
+    "columns": [
+     "client_id",
+     "as_of_date",
+     "ci_current_moic"
+    ],
+    "rows": [
+     [
+      "A12345",
+      "2024-10-25",
+      1.33
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-02",
+   "category": "performance",
+   "difficulty": "hard",
+   "question": "Which client has the highest CI Total MOIC in its latest performance snapshot?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "field": "CI_Total_MOIC"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client_A12350 (client_id A12350) has the highest CI Total MOIC in its latest performance snapshot, at 3.5 [performance].\n\nThe evidence returns a single row, using each client's own most recent as_of_date. It does not show the snapshot date or the MOIC values of other clients, so I can't state the margin over them.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11884.0,
+   "timing_ms": {
+    "resolution_ms": 0.4,
+    "routing_ms": 0.4,
+    "structured_ms": 5660.0,
+    "synthesis_ms": 6222.5,
+    "validation_ms": 0.6,
+    "total_ms": 11884.0
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT client_id, client_name, ci_total_moic FROM performance_latest WHERE ci_total_moic IS NOT NULL ORDER BY ci_total_moic DESC, client_id ASC LIMIT 1",
+    "columns": [
+     "client_id",
+     "client_name",
+     "ci_total_moic"
+    ],
+    "rows": [
+     [
+      "A12350",
+      "Client_A12350",
+      3.5
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-04",
+   "category": "performance",
+   "difficulty": "medium",
+   "question": "What is the average latest Total AUM amount across all clients?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "field": "Total_AUM_Amount"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "The average latest Total AUM across all clients is about 9,971,615.68 (rounded from 9971615.681145834). It uses each client's most recent snapshot, taken at that client's own maximum as_of_date [performance].\n\nThe evidence gives only this single average. It does not state the currency or the number of clients included, so those are unavailable here.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [
+     "answer does not deny evidence it was given: the answer says something is unavailable while other values are present; check it is a different item"
+    ],
+    "reasons": []
+   },
+   "latency_ms": 11357.3,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.4,
+    "structured_ms": 5280.9,
+    "synthesis_ms": 6075.1,
+    "validation_ms": 0.6,
+    "total_ms": 11357.3
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT AVG(total_aum_amount) AS avg_total_aum FROM performance_latest",
+    "columns": [
+     "avg_total_aum"
+    ],
+    "rows": [
+     [
+      9971615.681145834
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-05",
+   "category": "performance",
+   "difficulty": "hard",
+   "question": "What is client A12345's latest COP MOIC?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "unsupported",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345",
+     "family": "COP",
+     "metric": "MOIC"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": null,
+   "message": "'COP MOIC' does not exist in the performance data; no other metric is substituted",
+   "failure": {
+    "stage": "evidence",
+    "code": "metric_not_available",
+    "message": "'COP MOIC' does not exist in the performance data; no other metric is substituted"
+   },
+   "validation": null,
+   "latency_ms": 1.2,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.3,
+    "structured_ms": 0.4,
+    "total_ms": 1.2
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "unavailable_metric",
+    "sql": null,
+    "columns": [],
+    "rows": [],
+    "row_count": 0
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "expected refusal/clarification decided from structured response fields",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-06",
+   "category": "performance",
+   "difficulty": "hard",
+   "question": "What is client A12345's average CI Current MOIC across its snapshots?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345",
+     "field": "CI_Current_MOIC"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client A12345's average CI Current MOIC across its snapshots is 1.78125 (about 1.78 if rounded) [performance]. This covers the client's snapshot rows only; group rows are excluded [performance]. The evidence gives only the average, not the number of snapshots or the individual values.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11309.7,
+   "timing_ms": {
+    "resolution_ms": 0.4,
+    "routing_ms": 0.4,
+    "structured_ms": 5462.5,
+    "synthesis_ms": 5845.8,
+    "validation_ms": 0.5,
+    "total_ms": 11309.7
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT AVG(ci_current_moic) AS avg_ci_current_moic FROM performance_client WHERE client_id = 'A12345'",
+    "columns": [
+     "avg_ci_current_moic"
+    ],
+    "rows": [
+     [
+      1.78125
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "state that it is an average over 8 snapshots spanning 2010-05-06 to 2024-10-25",
+      "the latest value or the as-of date, or a caution that snapshots are not comparable"
+     ],
+     "must_not": [
+      "describe the average as the current or latest MOIC"
+     ],
+     "accept_numeric": {
+      "value": 1.7812,
+      "tolerance_abs": 0.005
+     },
+     "reference_facts": {
+      "snapshot_values": [
+       "0.93x",
+       "3.0x",
+       "1.29x",
+       "1.52x",
+       "2.26x",
+       "1.94x",
+       "1.98x",
+       "1.33x"
+      ],
+      "latest": "1.33x"
+     }
+    },
+    "expected_summary": "Mean 1.7812 only with caveat (8 snapshots 2010-05-06..2024-10-25); latest is 1.33x",
+    "observation": "Average 1.78125 within tolerance; the answer states it does not know the number of snapshots or the values, so the 8-snapshot span is not stated (same as Baseline).",
+    "keyword_hints_not_a_score": {
+     "1.78": true,
+     "8 snapshots|eight snapshots": false,
+     "2010-05-06": false,
+     "2024-10-25": false
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-07",
+   "category": "performance",
+   "difficulty": "hard",
+   "question": "Has client A12345's CI Current MOIC been improving over time?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345",
+     "field": "CI_Current_MOIC"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "No, the CI Current MOIC for client A12345 has not improved steadily. It moved up and down across the 8 snapshots [performance]:\n\n- 2010-05-06: 0.93\n- 2012-04-24: 3.0 (the highest value)\n- 2012-09-12: 1.29\n- 2015-03-23: 1.52\n- 2016-06-12: 2.26\n- 2018-03-17: 1.94\n- 2020-08-20: 1.98\n- 2024-10-25: 1.33 (the latest value)\n\nThe first snapshot is 0.93 and the latest is 1.33, so the latest is higher than the start [performance]. But the latest is well below the 2012-04-24 peak of 3.0 and below the 2016-06-12 value of 2.26 [performance]. The values rise and fall, so there is no consistent upward trend.\n\nThese are client snapshot rows only, with group rows excluded [performance]. The evidence does not say why the values changed.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12690.8,
+   "timing_ms": {
+    "resolution_ms": 0.4,
+    "routing_ms": 0.3,
+    "structured_ms": 5502.0,
+    "synthesis_ms": 7186.7,
+    "validation_ms": 1.3,
+    "total_ms": 12690.8
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT as_of_date, ci_current_moic FROM performance_client WHERE client_id = 'A12345' ORDER BY as_of_date ASC",
+    "columns": [
+     "as_of_date",
+     "ci_current_moic"
+    ],
+    "rows": [
+     [
+      "2010-05-06",
+      0.93
+     ],
+     [
+      "2012-04-24",
+      3.0
+     ],
+     [
+      "2012-09-12",
+      1.29
+     ],
+     [
+      "2015-03-23",
+      1.52
+     ],
+     [
+      "2016-06-12",
+      2.26
+     ],
+     [
+      "2018-03-17",
+      1.94
+     ],
+     [
+      "2020-08-20",
+      1.98
+     ],
+     [
+      "2024-10-25",
+      1.33
+     ]
+    ],
+    "row_count": 8
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "the values ordered by As_Of_Date",
+      "a statement that no consistent improving or declining pattern exists"
+     ],
+     "must_not": [
+      "say it has been improving",
+      "say it has been declining",
+      "read values in stored row order"
+     ],
+     "reference_facts": {
+      "ordered_series": [
+       {
+        "as_of_date": "2010-05-06",
+        "raw": "0.93x"
+       },
+       {
+        "as_of_date": "2012-04-24",
+        "raw": "3.0x"
+       },
+       {
+        "as_of_date": "2012-09-12",
+        "raw": "1.29x"
+       },
+       {
+        "as_of_date": "2015-03-23",
+        "raw": "1.52x"
+       },
+       {
+        "as_of_date": "2016-06-12",
+        "raw": "2.26x"
+       },
+       {
+        "as_of_date": "2018-03-17",
+        "raw": "1.94x"
+       },
+       {
+        "as_of_date": "2020-08-20",
+        "raw": "1.98x"
+       },
+       {
+        "as_of_date": "2024-10-25",
+        "raw": "1.33x"
+       }
+      ],
+      "first": {
+       "as_of_date": "2010-05-06",
+       "raw": "0.93x"
+      },
+      "last": {
+       "as_of_date": "2024-10-25",
+       "raw": "1.33x"
+      },
+      "monotonic": false
+     }
+    },
+    "expected_summary": "No consistent trend: 0.93x, 3.0x, 1.29x, 1.52x, 2.26x, 1.94x, 1.98x, 1.33x",
+    "observation": "The 8 values are listed in date order and described as moving up and down; the answer also notes the latest is higher than the first. Whether that meets the rule needs review.",
+    "keyword_hints_not_a_score": {
+     "0.93": true,
+     "1.33": true,
+     "no consistent|not a steady|no steady|up and down|not consistently": true
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-08",
+   "category": "performance",
+   "difficulty": "medium",
+   "question": "How many clients have performance data, and how many performance snapshots do those clients have in total?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "sheet": "performance_data"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "192 clients have performance data, and together they have 1,536 performance snapshots [performance]. These counts cover client snapshot rows only; group rows are excluded [performance].",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11067.1,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.5,
+    "structured_ms": 5661.9,
+    "synthesis_ms": 5404.1,
+    "validation_ms": 0.4,
+    "total_ms": 11067.1
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(DISTINCT client_id) AS client_count, COUNT(*) AS snapshot_count FROM performance_client",
+    "columns": [
+     "client_count",
+     "snapshot_count"
+    ],
+    "rows": [
+     [
+      192,
+      1536
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "PERF-10",
+   "category": "performance",
+   "difficulty": "hard",
+   "question": "What is the Total AUM amount for group 346?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "group 346",
+      "entity_type": "group",
+      "status": "resolved",
+      "canonical": "346",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "group_id": 346
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "The Total AUM amount for group 346 is 4,040,540.43 (rounded to two decimals as given) [performance]. The evidence returns a single row and does not state a currency, so the currency is not available.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [
+     "answer does not deny evidence it was given: the answer says something is unavailable while other values are present; check it is a different item"
+    ],
+    "reasons": []
+   },
+   "latency_ms": 11460.9,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.3,
+    "structured_ms": 5275.4,
+    "synthesis_ms": 6184.5,
+    "validation_ms": 0.5,
+    "total_ms": 11460.9
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT total_aum_amount FROM performance_group WHERE group_id = 346",
+    "columns": [
+     "total_aum_amount"
+    ],
+    "rows": [
+     [
+      4040540.43
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "MEET-01",
+   "category": "meeting",
+   "difficulty": "easy",
+   "question": "How many meetings are recorded for client B12463, and over what date range?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "B12463",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "B12463",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "B12463"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client B12463 has 22 recorded meetings, spanning from 2022-02-20 (earliest) to 2026-01-12 (latest) [meetings].\n\nThis is based on meeting metadata only, and B12463 appears in the meetings source only.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11816.2,
+   "timing_ms": {
+    "resolution_ms": 0.4,
+    "routing_ms": 0.3,
+    "meeting_ms": 6104.4,
+    "synthesis_ms": 5710.3,
+    "validation_ms": 0.4,
+    "total_ms": 11816.2
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": "aggregate",
+   "meeting_intent": {
+    "mode": "aggregate",
+    "reason": "no topical term; aggregate cue(s): how_many, date_range",
+    "cues": [
+     "how_many",
+     "date_range"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "many",
+      "date",
+      "range"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": [
+     [
+      "many",
+      "R1_request"
+     ],
+     [
+      "date",
+      "R1_request"
+     ],
+     [
+      "range",
+      "R1_request"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(*) AS meeting_count, MIN(meeting_date) AS earliest_date, MAX(meeting_date) AS latest_date FROM meetings_meta WHERE client_id = 'B12463'",
+    "columns": [
+     "meeting_count",
+     "earliest_date",
+     "latest_date"
+    ],
+    "rows": [
+     [
+      22,
+      "2022-02-20",
+      "2026-01-12"
+     ]
+    ],
+    "row_count": 1
+   },
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "MEET-02",
+   "category": "meeting",
+   "difficulty": "hard",
+   "question": "What were the action items from client A12345's meeting on 2022-10-01?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345",
+     "date": "2022-10-01",
+     "meeting_id": 4560
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "The action items for client A12345's meeting on 2022-10-01 (meeting 4560) are not recorded; the field is missing in the data, so it does not mean there were none [meeting: 4560, 2022-10-01].\n\nThe meeting text says only that Uma and the team summarized the current state of diligence on NorthStar FO and aligned on outstanding items relating to the renewables opportunity in Global, and that operational readiness was discussed [meeting: 4560, 2022-10-01]. The text shown does not list specific action items, and this is the only meeting in scope for that client and date [meeting: 4560, 2022-10-01].",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 6443.2,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.4,
+    "meeting_ms": 12.0,
+    "synthesis_ms": 6428.2,
+    "validation_ms": 1.7,
+    "total_ms": 6443.2
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [],
+    "filters": {
+     "client_ids": [
+      "A12345"
+     ],
+     "group_id": null,
+     "meeting_date": "2022-10-01"
+    },
+    "filtered_meeting_count": 1,
+    "matched_count": 1,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 4560,
+      "client_id": "A12345",
+      "meeting_date": "2022-10-01",
+      "matched_terms": []
+     }
+    ]
+   },
+   "meeting_mode": "listing",
+   "meeting_intent": {
+    "mode": "listing",
+    "reason": "no topical term; record-lookup cue(s): action_items",
+    "cues": [
+     "action_items"
+    ],
+    "term_audit": {
+     "original_terms": [],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": []
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "retrieval": {
+    "expected_total": 1,
+    "expected_in_top_k": 1,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "4560": 1
+    },
+    "returned": 1,
+    "top_k": 20,
+    "precision_in_returned": 1.0,
+    "scope_within_k": true
+   },
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "state that action items are not recorded / missing for this meeting"
+     ],
+     "must_not": [
+      "assert that no action items were agreed or that the meeting had no actions",
+      "invent action items",
+      "answer that the meeting does not exist"
+     ],
+     "reference_facts": {
+      "meeting_id": 4560,
+      "action_items": null
+     }
+    },
+    "expected_summary": "Not recorded (NULL) - must not be read as 'no actions'",
+    "observation": "Answer says action items are not recorded for meeting 4560 (now through the newest-first listing path with an exact-date filter).",
+    "keyword_hints_not_a_score": {
+     "not recorded|missing": true
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "MEET-04",
+   "category": "meeting",
+   "difficulty": "hard",
+   "question": "Which of client A12345's meetings had the largest estimated deal size, and what was it?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client A12345's meeting with the largest estimated deal size was meeting 17166 on 2025-12-29, with an estimate of 150M USD (150,000,000 in parsed USD) [meetings].\n\nThe evidence returned only this one meeting for the client, so no other meetings were available to compare. Values that could not be parsed are excluded from this aggregate.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12493.3,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.4,
+    "meeting_ms": 6104.1,
+    "synthesis_ms": 6387.3,
+    "validation_ms": 0.7,
+    "total_ms": 12493.3
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": "aggregate",
+   "meeting_intent": {
+    "mode": "aggregate",
+    "reason": "no topical term; aggregate cue(s): extreme_deal_size",
+    "cues": [
+     "extreme_deal_size"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "largest",
+      "estimated",
+      "deal",
+      "size"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": [
+      "deal_size"
+     ]
+    },
+    "removed": [
+     [
+      "largest",
+      "R1_request"
+     ],
+     [
+      "estimated",
+      "R1_request"
+     ],
+     [
+      "deal",
+      "R2_field"
+     ],
+     [
+      "size",
+      "R2_field"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT meeting_id, client_id, meeting_date, deal_size_estimate_raw, deal_size_estimate_usd FROM meetings_meta WHERE client_id = 'A12345' AND deal_size_estimate_usd IS NOT NULL ORDER BY deal_size_estimate_usd DESC, meeting_id ASC LIMIT 1",
+    "columns": [
+     "meeting_id",
+     "client_id",
+     "meeting_date",
+     "deal_size_estimate_raw",
+     "deal_size_estimate_usd"
+    ],
+    "rows": [
+     [
+      17166,
+      "A12345",
+      "2025-12-29",
+      "150M USD",
+      150000000.0
+     ]
+    ],
+    "row_count": 1
+   },
+   "unmatched_count": null,
+   "retrieval": {
+    "expected_total": 1,
+    "note": "answered by the aggregate path; no retrieval hits"
+   },
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": [
+     "correct value; the answer also says 'only this one meeting was returned, so no other meetings were available to compare', a misreading of LIMIT 1 (same false-claim pattern as the manual deal-size question)"
+    ]
+   }
+  },
+  {
+   "id": "MEET-05",
+   "category": "meeting",
+   "difficulty": "medium",
+   "question": "How many meetings are at the series B stage?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "field": "investment_stage",
+     "value": "series_b"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "There are 2,824 meetings at the series B stage, according to the aggregate over meetings metadata [meetings]. The evidence does not show how the series B stage was defined or filtered, so I can't say more about which meetings are included.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11512.2,
+   "timing_ms": {
+    "resolution_ms": 0.1,
+    "routing_ms": 0.3,
+    "meeting_ms": 5671.8,
+    "synthesis_ms": 5839.3,
+    "validation_ms": 0.5,
+    "total_ms": 11512.2
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": "aggregate",
+   "meeting_intent": {
+    "mode": "aggregate",
+    "reason": "no topical term; aggregate cue(s): how_many",
+    "cues": [
+     "how_many"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "many",
+      "series",
+      "stage"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": [
+      "stage"
+     ]
+    },
+    "removed": [
+     [
+      "many",
+      "R1_request"
+     ],
+     [
+      "series",
+      "R2_field"
+     ],
+     [
+      "stage",
+      "R2_field"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(*) AS meeting_count FROM meetings_meta WHERE stage = 'series_b'",
+    "columns": [
+     "meeting_count"
+    ],
+    "rows": [
+     [
+      2824
+     ]
+    ],
+    "row_count": 1
+   },
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": [
+     "the answer hedges that the evidence does not show how the stage was defined"
+    ]
+   }
+  },
+  {
+   "id": "MEET-06",
+   "category": "meeting",
+   "difficulty": "hard",
+   "question": "Which meetings did Sanjay López attend?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "error",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "attendee": "Sanjay López"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": null,
+   "message": "The generated answer failed validation and is withheld: numbers come from the evidence: numbers not found in the evidence: ['607']",
+   "failure": {
+    "stage": "validation",
+    "code": "validation_failed",
+    "message": "The generated answer failed validation and is withheld: numbers come from the evidence: numbers not found in the evidence: ['607']"
+   },
+   "validation": {
+    "valid": false,
+    "warnings": [
+     "missing action items are described as not recorded: returned meetings have NULL action_items; say 'not recorded'"
+    ],
+    "reasons": [
+     "numbers come from the evidence: numbers not found in the evidence: ['607']"
+    ]
+   },
+   "latency_ms": 7596.2,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.3,
+    "meeting_ms": 39.3,
+    "synthesis_ms": 7552.2,
+    "validation_ms": 3.8,
+    "total_ms": 7596.2
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [
+     "sanjay",
+     "lópez",
+     "attend"
+    ],
+    "filters": {
+     "client_ids": [],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 20000,
+    "matched_count": 627,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 1920,
+      "client_id": "D12574",
+      "meeting_date": "2022-10-07",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 2,
+      "meeting_id": 17056,
+      "client_id": "A12533",
+      "meeting_date": "2023-05-19",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 3,
+      "meeting_id": 13086,
+      "client_id": "B12369",
+      "meeting_date": "2025-11-14",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 4,
+      "meeting_id": 13993,
+      "client_id": "A12350",
+      "meeting_date": "2024-02-15",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 5,
+      "meeting_id": 11391,
+      "client_id": "A12504",
+      "meeting_date": "2022-08-03",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 6,
+      "meeting_id": 7675,
+      "client_id": "A12580",
+      "meeting_date": "2022-06-07",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 7,
+      "meeting_id": 16699,
+      "client_id": "D12553",
+      "meeting_date": "2026-03-01",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 8,
+      "meeting_id": 2829,
+      "client_id": "D12541",
+      "meeting_date": "2023-11-14",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 9,
+      "meeting_id": 10955,
+      "client_id": "A12461",
+      "meeting_date": "2025-08-17",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 10,
+      "meeting_id": 7827,
+      "client_id": "C12347",
+      "meeting_date": "2024-09-20",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 11,
+      "meeting_id": 48,
+      "client_id": "A12368",
+      "meeting_date": "2022-07-27",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 12,
+      "meeting_id": 14284,
+      "client_id": "D12508",
+      "meeting_date": "2026-01-06",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 13,
+      "meeting_id": 7772,
+      "client_id": "A12537",
+      "meeting_date": "2024-04-10",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 14,
+      "meeting_id": 12268,
+      "client_id": "C12398",
+      "meeting_date": "2022-10-25",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 15,
+      "meeting_id": 4357,
+      "client_id": "D12428",
+      "meeting_date": "2025-08-05",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 16,
+      "meeting_id": 15008,
+      "client_id": "C12390",
+      "meeting_date": "2022-04-18",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 17,
+      "meeting_id": 6831,
+      "client_id": "B12399",
+      "meeting_date": "2023-07-21",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 18,
+      "meeting_id": 5550,
+      "client_id": "B12506",
+      "meeting_date": "2025-12-06",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 19,
+      "meeting_id": 4045,
+      "client_id": "C12580",
+      "meeting_date": "2025-02-28",
+      "matched_terms": [
+       "sanjay"
+      ]
+     },
+     {
+      "rank": 20,
+      "meeting_id": 15365,
+      "client_id": "D12402",
+      "meeting_date": "2022-03-19",
+      "matched_terms": [
+       "sanjay"
+      ]
+     }
+    ]
+   },
+   "meeting_mode": "topical",
+   "meeting_intent": {
+    "mode": "topical",
+    "reason": "topical terms remain after removing request and field words",
+    "cues": [],
+    "term_audit": {
+     "original_terms": [
+      "sanjay",
+      "lópez",
+      "attend"
+     ],
+     "final_terms": [
+      "sanjay",
+      "lópez",
+      "attend"
+     ],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": []
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": 19373,
+   "retrieval": {
+    "expected_total": 14,
+    "expected_in_top_k": 1,
+    "recall_at_k": 0.071,
+    "ranks": null,
+    "returned": 20,
+    "top_k": 20,
+    "precision_in_returned": 0.05,
+    "scope_within_k": false
+   },
+   "answer_cited_meeting_ids": [],
+   "scoring": {
+    "method": "id_set: evidence recall@K and cited-id set equality",
+    "evidence_correct": false,
+    "answer_correct": false
+   },
+   "result": "incorrect",
+   "failure_mode": {
+    "primary": "meeting_retrieval",
+    "subtype": "encoding_and_top_k",
+    "explanation": "Unchanged cause: the query 'sanjay lopez attend' matches 627 meetings, only the top 20 are shown, and the stored spelling is mojibake. The answer cited 0 of the 14 expected meetings.",
+    "secondary": [
+     "the answer was withheld by validation for '607' (matched 627 minus shown 20), a derived number; its content was honest but incomplete"
+    ]
+   }
+  },
+  {
+   "id": "MEET-07",
+   "category": "meeting",
+   "difficulty": "medium",
+   "question": "In client A12346's meetings, which ones flag the absence of independent directors on the board?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12346",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12346",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12346"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Six of client A12346's 23 meetings have summaries flagging the absence of independent directors on the board. Each says governance issues included the current board composition and the absence of independent directors, rated medium-high risk until remedied.\n\n- Meeting 4147, 2022-10-03: [meeting: 4147, 2022-10-03]\n- Meeting 13181, 2022-11-01: [meeting: 13181, 2022-11-01]\n- Meeting 11756, 2024-05-28: [meeting: 11756, 2024-05-28]\n- Meeting 17742, 2024-11-26: [meeting: 17742, 2024-11-26]\n- Meeting 5506, 2025-08-10: [meeting: 5506, 2025-08-10]\n- Meeting 12801, 2025-11-24: [meeting: 12801, 2025-11-24]\n\nThe other 17 meetings in scope had no text match [meeting: 12801, 2025-11-24]. Action items are recorded for five of the six meetings. For meeting 5506, action items are not recorded [meeting: 5506, 2025-08-10].",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 7756.4,
+   "timing_ms": {
+    "resolution_ms": 0.8,
+    "routing_ms": 0.7,
+    "meeting_ms": 135.1,
+    "synthesis_ms": 7617.1,
+    "validation_ms": 2.3,
+    "total_ms": 7756.4
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [
+     "absence",
+     "independent",
+     "directors",
+     "board"
+    ],
+    "filters": {
+     "client_ids": [
+      "A12346"
+     ],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 23,
+    "matched_count": 6,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 12801,
+      "client_id": "A12346",
+      "meeting_date": "2025-11-24",
+      "matched_terms": [
+       "absence",
+       "independent",
+       "directors",
+       "board"
+      ]
+     },
+     {
+      "rank": 2,
+      "meeting_id": 17742,
+      "client_id": "A12346",
+      "meeting_date": "2024-11-26",
+      "matched_terms": [
+       "absence",
+       "independent",
+       "directors",
+       "board"
+      ]
+     },
+     {
+      "rank": 3,
+      "meeting_id": 5506,
+      "client_id": "A12346",
+      "meeting_date": "2025-08-10",
+      "matched_terms": [
+       "absence",
+       "independent",
+       "directors",
+       "board"
+      ]
+     },
+     {
+      "rank": 4,
+      "meeting_id": 4147,
+      "client_id": "A12346",
+      "meeting_date": "2022-10-03",
+      "matched_terms": [
+       "absence",
+       "independent",
+       "directors",
+       "board"
+      ]
+     },
+     {
+      "rank": 5,
+      "meeting_id": 11756,
+      "client_id": "A12346",
+      "meeting_date": "2024-05-28",
+      "matched_terms": [
+       "absence",
+       "independent",
+       "directors",
+       "board"
+      ]
+     },
+     {
+      "rank": 6,
+      "meeting_id": 13181,
+      "client_id": "A12346",
+      "meeting_date": "2022-11-01",
+      "matched_terms": [
+       "absence",
+       "independent",
+       "directors",
+       "board"
+      ]
+     }
+    ]
+   },
+   "meeting_mode": "topical",
+   "meeting_intent": {
+    "mode": "topical",
+    "reason": "topical terms remain after removing request and field words",
+    "cues": [],
+    "term_audit": {
+     "original_terms": [
+      "absence",
+      "independent",
+      "directors",
+      "board"
+     ],
+     "final_terms": [
+      "absence",
+      "independent",
+      "directors",
+      "board"
+     ],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": []
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": 17,
+   "retrieval": {
+    "expected_total": 6,
+    "expected_in_top_k": 6,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "4147": 4,
+     "5506": 3,
+     "11756": 5,
+     "12801": 1,
+     "13181": 6,
+     "17742": 2
+    },
+    "returned": 6,
+    "top_k": 20,
+    "precision_in_returned": 1.0,
+    "scope_within_k": false
+   },
+   "answer_cited_meeting_ids": [
+    4147,
+    5506,
+    11756,
+    12801,
+    13181,
+    17742
+   ],
+   "scoring": {
+    "method": "id_set: evidence recall@K and cited-id set equality",
+    "evidence_correct": true,
+    "answer_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": [
+     "Baseline withheld this answer for the derived count 17; V1 delivered it"
+    ]
+   }
+  },
+  {
+   "id": "MEET-08",
+   "category": "meeting",
+   "difficulty": "hard",
+   "question": "In client D12349's meetings, which ones raised concern that the company has no full-time finance chief and relies on outside providers for cash management?",
+   "semantic_stress": true,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "D12349",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "D12349",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "D12349"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "None of the retrieved meetings show that concern. The 15 text matches (out of 18 meetings in scope for D12349) came from generic terms such as \"cash\", \"finance\" and \"management\". The excerpts shown do not mention a missing full-time finance chief or reliance on outside providers for cash management.\n\n- Meetings 8623 (2024-07-24) and 7574 (2022-03-22) mention \"finance to deliver revised cash flows\", which is not a concern about a missing finance chief [meeting: 8623, 2024-07-24] [meeting: 7574, 2022-03-22].\n- Other matches concern cash flow visibility, seasonal cash-flow, diligence requests for cash flow data, or management Q&A on customer concentration and AR aging. None of them address finance leadership or outsourced cash management (for example [meeting: 9319, 2023-11-10], [meeting: 2860, 2025-05-28], [meeting: 5839, 2025-12-19]).\n\nOnly short excerpts were shown, so I cannot rule out that the full text of some meeting raises this. Based on the evidence provided, I can't name any meeting that did.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 8701.4,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.5,
+    "meeting_ms": 238.8,
+    "synthesis_ms": 8458.1,
+    "validation_ms": 3.2,
+    "total_ms": 8701.4
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [
+     "concern",
+     "full",
+     "time",
+     "finance",
+     "chief",
+     "relies",
+     "outside",
+     "providers",
+     "cash",
+     "management"
+    ],
+    "filters": {
+     "client_ids": [
+      "D12349"
+     ],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 18,
+    "matched_count": 15,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 8623,
+      "client_id": "D12349",
+      "meeting_date": "2024-07-24",
+      "matched_terms": [
+       "time",
+       "finance",
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 2,
+      "meeting_id": 7574,
+      "client_id": "D12349",
+      "meeting_date": "2022-03-22",
+      "matched_terms": [
+       "finance",
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 3,
+      "meeting_id": 2860,
+      "client_id": "D12349",
+      "meeting_date": "2025-05-28",
+      "matched_terms": [
+       "time",
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 4,
+      "meeting_id": 5791,
+      "client_id": "D12349",
+      "meeting_date": "2025-01-22",
+      "matched_terms": [
+       "time",
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 5,
+      "meeting_id": 5839,
+      "client_id": "D12349",
+      "meeting_date": "2025-12-19",
+      "matched_terms": [
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 6,
+      "meeting_id": 9319,
+      "client_id": "D12349",
+      "meeting_date": "2023-11-10",
+      "matched_terms": [
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 7,
+      "meeting_id": 1165,
+      "client_id": "D12349",
+      "meeting_date": "2023-08-24",
+      "matched_terms": [
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 8,
+      "meeting_id": 3664,
+      "client_id": "D12349",
+      "meeting_date": "2024-12-14",
+      "matched_terms": [
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 9,
+      "meeting_id": 8035,
+      "client_id": "D12349",
+      "meeting_date": "2024-12-05",
+      "matched_terms": [
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 10,
+      "meeting_id": 14383,
+      "client_id": "D12349",
+      "meeting_date": "2025-02-28",
+      "matched_terms": [
+       "cash",
+       "management"
+      ]
+     },
+     {
+      "rank": 11,
+      "meeting_id": 3760,
+      "client_id": "D12349",
+      "meeting_date": "2024-12-30",
+      "matched_terms": [
+       "management"
+      ]
+     },
+     {
+      "rank": 12,
+      "meeting_id": 9932,
+      "client_id": "D12349",
+      "meeting_date": "2022-08-17",
+      "matched_terms": [
+       "management"
+      ]
+     },
+     {
+      "rank": 13,
+      "meeting_id": 15480,
+      "client_id": "D12349",
+      "meeting_date": "2025-07-12",
+      "matched_terms": [
+       "cash"
+      ]
+     },
+     {
+      "rank": 14,
+      "meeting_id": 8342,
+      "client_id": "D12349",
+      "meeting_date": "2022-07-07",
+      "matched_terms": [
+       "management"
+      ]
+     },
+     {
+      "rank": 15,
+      "meeting_id": 5750,
+      "client_id": "D12349",
+      "meeting_date": "2024-07-08",
+      "matched_terms": [
+       "management"
+      ]
+     }
+    ]
+   },
+   "meeting_mode": "topical",
+   "meeting_intent": {
+    "mode": "topical",
+    "reason": "topical terms remain after removing request and field words",
+    "cues": [],
+    "term_audit": {
+     "original_terms": [
+      "concern",
+      "company",
+      "full",
+      "time",
+      "finance",
+      "chief",
+      "relies",
+      "outside",
+      "providers",
+      "cash",
+      "management"
+     ],
+     "final_terms": [
+      "concern",
+      "full",
+      "time",
+      "finance",
+      "chief",
+      "relies",
+      "outside",
+      "providers",
+      "cash",
+      "management"
+     ],
+     "phrases": [],
+     "requested_fields": [
+      "company"
+     ]
+    },
+    "removed": [
+     [
+      "company",
+      "R2_field"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": 3,
+   "retrieval": {
+    "expected_total": 3,
+    "expected_in_top_k": 3,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "3664": 8,
+     "5791": 4,
+     "9932": 12
+    },
+    "returned": 15,
+    "top_k": 20,
+    "precision_in_returned": 0.2,
+    "scope_within_k": true
+   },
+   "answer_cited_meeting_ids": [
+    2860,
+    5839,
+    7574,
+    8623,
+    9319
+   ],
+   "scoring": {
+    "method": "id_set: evidence recall@K and cited-id set equality",
+    "evidence_correct": true,
+    "answer_correct": false
+   },
+   "result": "incorrect",
+   "failure_mode": {
+    "primary": "meeting_retrieval",
+    "subtype": "semantic_miss",
+    "explanation": "Same as Baseline: question and evidence sentence share 0 content words; the 3 expected meetings are in the 15 returned only because the client has 18 meetings in scope and K=20; matched words are generic. V1 removed only 'company' from the terms.",
+    "secondary": [
+     "retrieved in top-K only because scope (18) <= K (20)",
+     "answer faithful to the visible snippets; validation passed"
+    ]
+   }
+  },
+  {
+   "id": "MEET-10",
+   "category": "meeting",
+   "difficulty": "hard",
+   "question": "In client A12346's meetings, which one discusses sensitivity to a ±128 bps change in growth?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12346",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12346",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12346",
+     "value": "±128 bps"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Meeting 5506 (2025-08-10, company Helix Capital) is the one that discusses sensitivity to a ±128 bps change in growth. Its summary says the sensitivity showed IRR shifting by about 6 percentage points, which prompted further clarification requests [meeting: 5506, 2025-08-10]. The action items for that meeting are not recorded [meeting: 5506, 2025-08-10].\n\nMeeting 11756 (2024-05-28) has near-identical wording, but for a ±183 bps change, not 128 [meeting: 11756, 2024-05-28]. Only 5506 matches the 128 bps figure in the evidence shown.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 6693.2,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.4,
+    "meeting_ms": 229.4,
+    "synthesis_ms": 6458.4,
+    "validation_ms": 4.2,
+    "total_ms": 6693.2
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [
+     "sensitivity",
+     "128",
+     "bps",
+     "change",
+     "growth"
+    ],
+    "filters": {
+     "client_ids": [
+      "A12346"
+     ],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 23,
+    "matched_count": 18,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 5506,
+      "client_id": "A12346",
+      "meeting_date": "2025-08-10",
+      "matched_terms": [
+       "sensitivity",
+       "128",
+       "bps",
+       "change",
+       "growth"
+      ]
+     },
+     {
+      "rank": 2,
+      "meeting_id": 11756,
+      "client_id": "A12346",
+      "meeting_date": "2024-05-28",
+      "matched_terms": [
+       "sensitivity",
+       "bps",
+       "change",
+       "growth"
+      ]
+     },
+     {
+      "rank": 3,
+      "meeting_id": 6927,
+      "client_id": "A12346",
+      "meeting_date": "2023-06-26",
+      "matched_terms": [
+       "bps",
+       "growth",
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 4,
+      "meeting_id": 15447,
+      "client_id": "A12346",
+      "meeting_date": "2025-03-23",
+      "matched_terms": [
+       "bps",
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 5,
+      "meeting_id": 14882,
+      "client_id": "A12346",
+      "meeting_date": "2024-12-27",
+      "matched_terms": [
+       "bps",
+       "growth"
+      ]
+     },
+     {
+      "rank": 6,
+      "meeting_id": 6014,
+      "client_id": "A12346",
+      "meeting_date": "2024-03-27",
+      "matched_terms": [
+       "change",
+       "growth"
+      ]
+     },
+     {
+      "rank": 7,
+      "meeting_id": 17742,
+      "client_id": "A12346",
+      "meeting_date": "2024-11-26",
+      "matched_terms": [
+       "change",
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 8,
+      "meeting_id": 9970,
+      "client_id": "A12346",
+      "meeting_date": "2025-09-29",
+      "matched_terms": [
+       "sensitivity",
+       "change"
+      ]
+     },
+     {
+      "rank": 9,
+      "meeting_id": 10575,
+      "client_id": "A12346",
+      "meeting_date": "2022-12-30",
+      "matched_terms": [
+       "change"
+      ]
+     },
+     {
+      "rank": 10,
+      "meeting_id": 4147,
+      "client_id": "A12346",
+      "meeting_date": "2022-10-03",
+      "matched_terms": [
+       "bps"
+      ]
+     },
+     {
+      "rank": 11,
+      "meeting_id": 12053,
+      "client_id": "A12346",
+      "meeting_date": "2024-01-20",
+      "matched_terms": [
+       "bps"
+      ]
+     },
+     {
+      "rank": 12,
+      "meeting_id": 13181,
+      "client_id": "A12346",
+      "meeting_date": "2022-11-01",
+      "matched_terms": [
+       "growth",
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 13,
+      "meeting_id": 4638,
+      "client_id": "A12346",
+      "meeting_date": "2026-02-04",
+      "matched_terms": [
+       "growth"
+      ]
+     },
+     {
+      "rank": 14,
+      "meeting_id": 18331,
+      "client_id": "A12346",
+      "meeting_date": "2025-08-30",
+      "matched_terms": [
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 15,
+      "meeting_id": 17456,
+      "client_id": "A12346",
+      "meeting_date": "2024-12-29",
+      "matched_terms": [
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 16,
+      "meeting_id": 2835,
+      "client_id": "A12346",
+      "meeting_date": "2023-01-19",
+      "matched_terms": [
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 17,
+      "meeting_id": 3530,
+      "client_id": "A12346",
+      "meeting_date": "2022-11-14",
+      "matched_terms": [
+       "sensitivity"
+      ]
+     },
+     {
+      "rank": 18,
+      "meeting_id": 18163,
+      "client_id": "A12346",
+      "meeting_date": "2024-06-26",
+      "matched_terms": [
+       "sensitivity"
+      ]
+     }
+    ]
+   },
+   "meeting_mode": "topical",
+   "meeting_intent": {
+    "mode": "topical",
+    "reason": "topical terms remain after removing request and field words",
+    "cues": [],
+    "term_audit": {
+     "original_terms": [
+      "sensitivity",
+      "128",
+      "bps",
+      "change",
+      "growth"
+     ],
+     "final_terms": [
+      "sensitivity",
+      "128",
+      "bps",
+      "change",
+      "growth"
+     ],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": []
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": 5,
+   "retrieval": {
+    "expected_total": 1,
+    "expected_in_top_k": 1,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "5506": 1
+    },
+    "returned": 18,
+    "top_k": 20,
+    "precision_in_returned": 0.056,
+    "scope_within_k": false
+   },
+   "answer_cited_meeting_ids": [
+    5506,
+    11756
+   ],
+   "result": "needs_review",
+   "scoring": {
+    "method": "id_set: evidence recall@K is scored automatically; the answer text is not (cited-id equality cannot distinguish a match from a cited non-match)",
+    "evidence_correct": true
+   },
+   "review": {
+    "rule": {},
+    "expected_summary": "Meeting 5506 (2025-08-10)",
+    "observation": "Meeting 5506 is retrieved at rank 1 and named in the answer as the match. The answer also cites meeting 11756 (rank 2) and states it is NOT a match (+/-183 bps, not 128). Automated citation-set equality would score this wrongly, so it is left for review.",
+    "keyword_hints_not_a_score": {}
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "HYB-01",
+   "category": "hybrid",
+   "difficulty": "hard",
+   "question": "For client A12345, what is the latest CI Total MOIC and when was the client's most recent meeting?",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "hybrid",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R3_HYBRID",
+    "success": true
+   },
+   "answer": "Client A12345's latest CI Total MOIC is 0.78, from the snapshot dated 2024-10-25 [performance].\n\nTheir most recent meeting in the evidence is meeting 11640 on 2026-03-13 [meeting: 11640, 2026-03-13]. The listing shows 20 of 23 meetings in scope, newest first, so this is the latest of those shown. The three unlisted meetings would be older than the listed ones, so they cannot be more recent.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12067.4,
+   "timing_ms": {
+    "resolution_ms": 0.6,
+    "routing_ms": 0.6,
+    "structured_ms": 5426.7,
+    "meeting_ms": 11.5,
+    "synthesis_ms": 6623.7,
+    "validation_ms": 3.8,
+    "total_ms": 12067.4
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT client_id, as_of_date, ci_total_moic FROM performance_latest WHERE client_id = 'A12345'",
+    "columns": [
+     "client_id",
+     "as_of_date",
+     "ci_total_moic"
+    ],
+    "rows": [
+     [
+      "A12345",
+      "2024-10-25",
+      0.78
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [],
+    "filters": {
+     "client_ids": [
+      "A12345"
+     ],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 23,
+    "matched_count": 23,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 11640,
+      "client_id": "A12345",
+      "meeting_date": "2026-03-13",
+      "matched_terms": []
+     },
+     {
+      "rank": 2,
+      "meeting_id": 17166,
+      "client_id": "A12345",
+      "meeting_date": "2025-12-29",
+      "matched_terms": []
+     },
+     {
+      "rank": 3,
+      "meeting_id": 9332,
+      "client_id": "A12345",
+      "meeting_date": "2025-09-21",
+      "matched_terms": []
+     },
+     {
+      "rank": 4,
+      "meeting_id": 9259,
+      "client_id": "A12345",
+      "meeting_date": "2025-09-20",
+      "matched_terms": []
+     },
+     {
+      "rank": 5,
+      "meeting_id": 11296,
+      "client_id": "A12345",
+      "meeting_date": "2025-01-01",
+      "matched_terms": []
+     },
+     {
+      "rank": 6,
+      "meeting_id": 11738,
+      "client_id": "A12345",
+      "meeting_date": "2024-12-30",
+      "matched_terms": []
+     },
+     {
+      "rank": 7,
+      "meeting_id": 11984,
+      "client_id": "A12345",
+      "meeting_date": "2024-12-14",
+      "matched_terms": []
+     },
+     {
+      "rank": 8,
+      "meeting_id": 14785,
+      "client_id": "A12345",
+      "meeting_date": "2024-12-05",
+      "matched_terms": []
+     },
+     {
+      "rank": 9,
+      "meeting_id": 17735,
+      "client_id": "A12345",
+      "meeting_date": "2024-06-03",
+      "matched_terms": []
+     },
+     {
+      "rank": 10,
+      "meeting_id": 11606,
+      "client_id": "A12345",
+      "meeting_date": "2024-04-17",
+      "matched_terms": []
+     },
+     {
+      "rank": 11,
+      "meeting_id": 5291,
+      "client_id": "A12345",
+      "meeting_date": "2024-03-18",
+      "matched_terms": []
+     },
+     {
+      "rank": 12,
+      "meeting_id": 10542,
+      "client_id": "A12345",
+      "meeting_date": "2024-03-02",
+      "matched_terms": []
+     },
+     {
+      "rank": 13,
+      "meeting_id": 13002,
+      "client_id": "A12345",
+      "meeting_date": "2023-12-13",
+      "matched_terms": []
+     },
+     {
+      "rank": 14,
+      "meeting_id": 18152,
+      "client_id": "A12345",
+      "meeting_date": "2023-10-12",
+      "matched_terms": []
+     },
+     {
+      "rank": 15,
+      "meeting_id": 2825,
+      "client_id": "A12345",
+      "meeting_date": "2023-07-05",
+      "matched_terms": []
+     },
+     {
+      "rank": 16,
+      "meeting_id": 9780,
+      "client_id": "A12345",
+      "meeting_date": "2023-03-25",
+      "matched_terms": []
+     },
+     {
+      "rank": 17,
+      "meeting_id": 10389,
+      "client_id": "A12345",
+      "meeting_date": "2023-02-05",
+      "matched_terms": []
+     },
+     {
+      "rank": 18,
+      "meeting_id": 6869,
+      "client_id": "A12345",
+      "meeting_date": "2022-10-12",
+      "matched_terms": []
+     },
+     {
+      "rank": 19,
+      "meeting_id": 4560,
+      "client_id": "A12345",
+      "meeting_date": "2022-10-01",
+      "matched_terms": []
+     },
+     {
+      "rank": 20,
+      "meeting_id": 17381,
+      "client_id": "A12345",
+      "meeting_date": "2022-09-28",
+      "matched_terms": []
+     }
+    ]
+   },
+   "meeting_mode": "listing",
+   "meeting_intent": {
+    "mode": "listing",
+    "reason": "no topical term; record-lookup cue(s): latest",
+    "cues": [
+     "latest"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "ci",
+      "total",
+      "moic"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": [
+     [
+      "ci",
+      "R3_structured"
+     ],
+     [
+      "total",
+      "R3_structured"
+     ],
+     [
+      "moic",
+      "R3_structured"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "retrieval": {
+    "expected_total": 1,
+    "expected_in_top_k": 1,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "11640": 1
+    },
+    "returned": 20,
+    "top_k": 20,
+    "precision_in_returned": 0.05,
+    "scope_within_k": false
+   },
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": [
+     "listing path: the model notes 20 of 23 meetings are shown and reasons the unlisted ones are older"
+    ]
+   }
+  },
+  {
+   "id": "HYB-02",
+   "category": "hybrid",
+   "difficulty": "hard",
+   "question": "How many investment records and how many meetings does client B12346 have?",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "hybrid",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "B12346",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "B12346",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "B12346"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R3_HYBRID",
+    "success": true
+   },
+   "answer": "Client B12346 has 216 investment records [investments]. These are records (rows), not a count of distinct deals or clients.\n\nThe same client has 22 meetings, counted from meeting metadata only [meetings]. This count does not use meeting text, so it says nothing about what was discussed.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 16855.3,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.4,
+    "structured_ms": 5613.7,
+    "meeting_ms": 5514.6,
+    "synthesis_ms": 5725.3,
+    "validation_ms": 0.6,
+    "total_ms": 16855.3
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(*) AS investment_record_count FROM investments WHERE client_id = 'B12346'",
+    "columns": [
+     "investment_record_count"
+    ],
+    "rows": [
+     [
+      216
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": "aggregate",
+   "meeting_intent": {
+    "mode": "aggregate",
+    "reason": "no topical term; aggregate cue(s): how_many",
+    "cues": [
+     "how_many"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "many",
+      "investment"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": [
+     [
+      "many",
+      "R1_request"
+     ],
+     [
+      "investment",
+      "R3_structured"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(*) AS meeting_count FROM meetings_meta WHERE client_id = 'B12346'",
+    "columns": [
+     "meeting_count"
+    ],
+    "rows": [
+     [
+      22
+     ]
+    ],
+    "row_count": 1
+   },
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value + answer states the meeting count",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "HYB-03",
+   "category": "hybrid",
+   "difficulty": "hard",
+   "question": "What is the total USD investment amount for client C12355, and which company and sector did their most recent meeting involve?",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "hybrid",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "C12355",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "C12355",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "C12355"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R3_HYBRID",
+    "success": true
+   },
+   "answer": "Client C12355's total USD investment amount is 437,086,022.21 (about 437.09 million, rounded) [investments].\n\nTheir most recent meeting in the listing is meeting 8038 on 2026-03-01. It involved the company BlueOak Partners in the manufacturing sector [meeting: 8038, 2026-03-01]. The listing is ordered by date only, so this shows which meeting is newest and its attributes, not a topical match. Action items for that meeting are not recorded.\n\nThe two facts are linked only by client_id C12355. The investment total is not broken down by company or sector, so it cannot be tied to BlueOak Partners or manufacturing.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12960.4,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.6,
+    "structured_ms": 5673.8,
+    "meeting_ms": 6.1,
+    "synthesis_ms": 7275.5,
+    "validation_ms": 3.5,
+    "total_ms": 12960.4
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT SUM(investment_amount_usd_for_agg) AS total_usd_investment FROM investments WHERE client_id = 'C12355'",
+    "columns": [
+     "total_usd_investment"
+    ],
+    "rows": [
+     [
+      437086022.21
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [],
+    "filters": {
+     "client_ids": [
+      "C12355"
+     ],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 19,
+    "matched_count": 19,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 8038,
+      "client_id": "C12355",
+      "meeting_date": "2026-03-01",
+      "matched_terms": []
+     },
+     {
+      "rank": 2,
+      "meeting_id": 4810,
+      "client_id": "C12355",
+      "meeting_date": "2026-02-22",
+      "matched_terms": []
+     },
+     {
+      "rank": 3,
+      "meeting_id": 10980,
+      "client_id": "C12355",
+      "meeting_date": "2026-02-21",
+      "matched_terms": []
+     },
+     {
+      "rank": 4,
+      "meeting_id": 3636,
+      "client_id": "C12355",
+      "meeting_date": "2026-01-16",
+      "matched_terms": []
+     },
+     {
+      "rank": 5,
+      "meeting_id": 15531,
+      "client_id": "C12355",
+      "meeting_date": "2024-11-24",
+      "matched_terms": []
+     },
+     {
+      "rank": 6,
+      "meeting_id": 4390,
+      "client_id": "C12355",
+      "meeting_date": "2024-10-13",
+      "matched_terms": []
+     },
+     {
+      "rank": 7,
+      "meeting_id": 13220,
+      "client_id": "C12355",
+      "meeting_date": "2024-09-16",
+      "matched_terms": []
+     },
+     {
+      "rank": 8,
+      "meeting_id": 3114,
+      "client_id": "C12355",
+      "meeting_date": "2024-05-18",
+      "matched_terms": []
+     },
+     {
+      "rank": 9,
+      "meeting_id": 7488,
+      "client_id": "C12355",
+      "meeting_date": "2023-10-10",
+      "matched_terms": []
+     },
+     {
+      "rank": 10,
+      "meeting_id": 3344,
+      "client_id": "C12355",
+      "meeting_date": "2023-07-07",
+      "matched_terms": []
+     },
+     {
+      "rank": 11,
+      "meeting_id": 1242,
+      "client_id": "C12355",
+      "meeting_date": "2023-04-22",
+      "matched_terms": []
+     },
+     {
+      "rank": 12,
+      "meeting_id": 489,
+      "client_id": "C12355",
+      "meeting_date": "2023-03-02",
+      "matched_terms": []
+     },
+     {
+      "rank": 13,
+      "meeting_id": 16639,
+      "client_id": "C12355",
+      "meeting_date": "2023-02-04",
+      "matched_terms": []
+     },
+     {
+      "rank": 14,
+      "meeting_id": 18896,
+      "client_id": "C12355",
+      "meeting_date": "2022-07-27",
+      "matched_terms": []
+     },
+     {
+      "rank": 15,
+      "meeting_id": 16585,
+      "client_id": "C12355",
+      "meeting_date": "2022-06-16",
+      "matched_terms": []
+     },
+     {
+      "rank": 16,
+      "meeting_id": 5638,
+      "client_id": "C12355",
+      "meeting_date": "2022-04-27",
+      "matched_terms": []
+     },
+     {
+      "rank": 17,
+      "meeting_id": 15386,
+      "client_id": "C12355",
+      "meeting_date": "2022-04-16",
+      "matched_terms": []
+     },
+     {
+      "rank": 18,
+      "meeting_id": 18064,
+      "client_id": "C12355",
+      "meeting_date": "2022-04-03",
+      "matched_terms": []
+     },
+     {
+      "rank": 19,
+      "meeting_id": 2683,
+      "client_id": "C12355",
+      "meeting_date": "2022-03-28",
+      "matched_terms": []
+     }
+    ]
+   },
+   "meeting_mode": "listing",
+   "meeting_intent": {
+    "mode": "listing",
+    "reason": "no topical term; record-lookup cue(s): latest",
+    "cues": [
+     "latest"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "total",
+      "usd",
+      "investment",
+      "amount",
+      "company",
+      "sector",
+      "involve"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": [
+      "sector",
+      "company"
+     ]
+    },
+    "removed": [
+     [
+      "total",
+      "R3_structured"
+     ],
+     [
+      "usd",
+      "R3_structured"
+     ],
+     [
+      "investment",
+      "R3_structured"
+     ],
+     [
+      "amount",
+      "R3_structured"
+     ],
+     [
+      "company",
+      "R2_field"
+     ],
+     [
+      "sector",
+      "R2_field"
+     ],
+     [
+      "involve",
+      "R1_request"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "retrieval": {
+    "expected_total": 1,
+    "expected_in_top_k": 1,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "8038": 1
+    },
+    "returned": 19,
+    "top_k": 20,
+    "precision_in_returned": 0.053,
+    "scope_within_k": true
+   },
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": [
+     "sector was shown to the model because the question named it"
+    ]
+   }
+  },
+  {
+   "id": "HYB-05",
+   "category": "hybrid",
+   "difficulty": "hard",
+   "question": "What is the latest CI Total MOIC for client B12463, and what action items were recorded at their most recent meeting?",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "hybrid",
+   "status": "error",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "B12463",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "B12463",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "B12463"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R3_HYBRID",
+    "success": true
+   },
+   "answer": null,
+   "message": "The generated answer failed validation and is withheld: references point to returned evidence: [performance] cites a source that was not used (none)",
+   "failure": {
+    "stage": "validation",
+    "code": "validation_failed",
+    "message": "The generated answer failed validation and is withheld: references point to returned evidence: [performance] cites a source that was not used (none)"
+   },
+   "validation": {
+    "valid": false,
+    "warnings": [
+     "missing action items are described as not recorded: returned meetings have NULL action_items; say 'not recorded'"
+    ],
+    "reasons": [
+     "references point to returned evidence: [performance] cites a source that was not used (none)"
+    ]
+   },
+   "latency_ms": 6713.2,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.5,
+    "structured_ms": 0.0,
+    "meeting_ms": 6.3,
+    "synthesis_ms": 6701.9,
+    "validation_ms": 3.6,
+    "total_ms": 6713.2
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "no_structured_data",
+    "sql": null,
+    "columns": [],
+    "rows": [],
+    "row_count": 0
+   },
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [],
+    "filters": {
+     "client_ids": [
+      "B12463"
+     ],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 22,
+    "matched_count": 22,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 706,
+      "client_id": "B12463",
+      "meeting_date": "2026-01-12",
+      "matched_terms": []
+     },
+     {
+      "rank": 2,
+      "meeting_id": 13316,
+      "client_id": "B12463",
+      "meeting_date": "2025-10-06",
+      "matched_terms": []
+     },
+     {
+      "rank": 3,
+      "meeting_id": 2623,
+      "client_id": "B12463",
+      "meeting_date": "2025-09-14",
+      "matched_terms": []
+     },
+     {
+      "rank": 4,
+      "meeting_id": 9724,
+      "client_id": "B12463",
+      "meeting_date": "2025-08-22",
+      "matched_terms": []
+     },
+     {
+      "rank": 5,
+      "meeting_id": 9524,
+      "client_id": "B12463",
+      "meeting_date": "2024-12-13",
+      "matched_terms": []
+     },
+     {
+      "rank": 6,
+      "meeting_id": 4675,
+      "client_id": "B12463",
+      "meeting_date": "2024-11-13",
+      "matched_terms": []
+     },
+     {
+      "rank": 7,
+      "meeting_id": 115,
+      "client_id": "B12463",
+      "meeting_date": "2024-10-28",
+      "matched_terms": []
+     },
+     {
+      "rank": 8,
+      "meeting_id": 8095,
+      "client_id": "B12463",
+      "meeting_date": "2024-05-18",
+      "matched_terms": []
+     },
+     {
+      "rank": 9,
+      "meeting_id": 242,
+      "client_id": "B12463",
+      "meeting_date": "2023-12-07",
+      "matched_terms": []
+     },
+     {
+      "rank": 10,
+      "meeting_id": 18789,
+      "client_id": "B12463",
+      "meeting_date": "2023-11-01",
+      "matched_terms": []
+     },
+     {
+      "rank": 11,
+      "meeting_id": 8812,
+      "client_id": "B12463",
+      "meeting_date": "2023-09-24",
+      "matched_terms": []
+     },
+     {
+      "rank": 12,
+      "meeting_id": 11340,
+      "client_id": "B12463",
+      "meeting_date": "2023-09-13",
+      "matched_terms": []
+     },
+     {
+      "rank": 13,
+      "meeting_id": 8064,
+      "client_id": "B12463",
+      "meeting_date": "2023-09-05",
+      "matched_terms": []
+     },
+     {
+      "rank": 14,
+      "meeting_id": 18047,
+      "client_id": "B12463",
+      "meeting_date": "2023-07-17",
+      "matched_terms": []
+     },
+     {
+      "rank": 15,
+      "meeting_id": 2904,
+      "client_id": "B12463",
+      "meeting_date": "2023-06-21",
+      "matched_terms": []
+     },
+     {
+      "rank": 16,
+      "meeting_id": 19544,
+      "client_id": "B12463",
+      "meeting_date": "2023-06-19",
+      "matched_terms": []
+     },
+     {
+      "rank": 17,
+      "meeting_id": 12691,
+      "client_id": "B12463",
+      "meeting_date": "2023-03-13",
+      "matched_terms": []
+     },
+     {
+      "rank": 18,
+      "meeting_id": 5746,
+      "client_id": "B12463",
+      "meeting_date": "2023-01-30",
+      "matched_terms": []
+     },
+     {
+      "rank": 19,
+      "meeting_id": 17191,
+      "client_id": "B12463",
+      "meeting_date": "2023-01-04",
+      "matched_terms": []
+     },
+     {
+      "rank": 20,
+      "meeting_id": 1,
+      "client_id": "B12463",
+      "meeting_date": "2022-09-01",
+      "matched_terms": []
+     }
+    ]
+   },
+   "meeting_mode": "listing",
+   "meeting_intent": {
+    "mode": "listing",
+    "reason": "no topical term; record-lookup cue(s): latest, action_items",
+    "cues": [
+     "latest",
+     "action_items"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "ci",
+      "total",
+      "moic"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": [
+     [
+      "ci",
+      "R3_structured"
+     ],
+     [
+      "total",
+      "R3_structured"
+     ],
+     [
+      "moic",
+      "R3_structured"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "retrieval": {
+    "expected_total": 1,
+    "expected_in_top_k": 1,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "706": 1
+    },
+    "returned": 20,
+    "top_k": 20,
+    "precision_in_returned": 0.05,
+    "scope_within_k": false
+   },
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "state that no performance data exists for B12463",
+      "report meeting 706 dated 2026-01-12",
+      "the recorded action item: Action: introduce legal counsel to start drafting a mutually acceptable shareholder agreement within 10 business days. | Action: schedule a management Q&A to address customer concentration and AR aging concerns."
+     ],
+     "must_not": [
+      "say the client does not exist",
+      "invent a MOIC value",
+      "treat missing performance as 0"
+     ],
+     "reference_facts": {
+      "latest_meeting_id": 706,
+      "latest_meeting_date": "2026-01-12",
+      "action_items": "Action: introduce legal counsel to start drafting a mutually acceptable shareholder agreement within 10 business days. | Action: schedule a management Q&A to address customer concentration and AR aging concerns."
+     }
+    },
+    "expected_summary": "No performance data (meeting-only client); latest meeting 706 on 2026-01-12",
+    "observation": "No answer was delivered: it was withheld by validation because it cites [performance] to say there is no performance data while no performance evidence exists. The evidence itself holds meeting 706 at rank 1 with its date and both action items, and the withheld text (kept in the failure details) reports them. Baseline delivered an answer without the meeting.",
+    "keyword_hints_not_a_score": {
+     "no performance data|not available|no data": false,
+     "706": false,
+     "2026-01-12": false,
+     "legal counsel": false
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": [
+     "withheld answer content matches the rule's facts; the rejection is a citation rule (source cited without evidence)"
+    ]
+   }
+  },
+  {
+   "id": "HYB-06",
+   "category": "hybrid",
+   "difficulty": "medium",
+   "question": "How many of client A12345's meetings took place after its latest performance snapshot, and what are the two dates?",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "hybrid",
+   "status": "unsupported",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12345",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12345"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R3_HYBRID",
+    "success": true
+   },
+   "answer": null,
+   "message": "One part of the question could not be answered, so no combined answer is given: meeting aggregate: Meetings after the latest performance snapshot needs the snapshot date, which is not in meetings_meta.",
+   "failure": {
+    "stage": "evidence",
+    "code": "hybrid_partial_failure",
+    "message": "One part of the question could not be answered, so no combined answer is given: meeting aggregate: Meetings after the latest performance snapshot needs the snapshot date, which is not in meetings_meta."
+   },
+   "validation": null,
+   "latency_ms": 10747.6,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.5,
+    "structured_ms": 5354.9,
+    "meeting_ms": 5391.4,
+    "total_ms": 10747.6
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT client_id, as_of_date FROM performance_latest WHERE client_id = 'A12345'",
+    "columns": [
+     "client_id",
+     "as_of_date"
+    ],
+    "rows": [
+     [
+      "A12345",
+      "2024-10-25"
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": "aggregate",
+   "meeting_intent": {
+    "mode": "aggregate",
+    "reason": "no topical term; aggregate cue(s): how_many",
+    "cues": [
+     "how_many"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "many",
+      "after",
+      "performance",
+      "snapshot",
+      "two",
+      "dates"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": [
+     [
+      "many",
+      "R1_request"
+     ],
+     [
+      "after",
+      "R1_request"
+     ],
+     [
+      "performance",
+      "R3_structured"
+     ],
+     [
+      "snapshot",
+      "R3_structured"
+     ],
+     [
+      "two",
+      "R1_request"
+     ],
+     [
+      "dates",
+      "R1_request"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": {
+    "outcome": "unsupported_question",
+    "sql": null,
+    "columns": [],
+    "rows": [],
+    "row_count": 0
+   },
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": false
+   },
+   "result": "incorrect",
+   "failure_mode": {
+    "primary": "hybrid_limitation",
+    "subtype": "cross_source_date_dependency",
+    "explanation": "The meeting side was classified as an aggregate ('how many'); the generated SQL step returned 'unsupported': the snapshot date is not in meetings_meta and the two sides are independent. The whole question was reported as a hybrid partial failure. No count was produced.",
+    "secondary": [
+     "Baseline produced a wrong self-contradicting count that passed validation; V1 reports the dependency as unsupported instead"
+    ]
+   }
+  },
+  {
+   "id": "HYB-07",
+   "category": "hybrid",
+   "difficulty": "hard",
+   "question": "How many meetings were held by relationship manager Priya Sharma?",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "ambiguous",
+   "status": "unsupported",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "Priya Sharma",
+      "entity_type": "rm",
+      "status": "resolved",
+      "canonical": "Priya Sharma",
+      "match_rule": "exact_name",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "rm": "Priya Sharma"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R2_RM_MEETING_LINK",
+    "success": true
+   },
+   "answer": null,
+   "message": "This cannot be answered from the data: answering would assume an RM-to-meeting link that the data does not have (A2, A3).",
+   "failure": {
+    "stage": "routing",
+    "code": "rm_meeting_link",
+    "message": "This cannot be answered from the data: answering would assume an RM-to-meeting link that the data does not have (A2, A3)."
+   },
+   "validation": null,
+   "latency_ms": 0.7,
+   "timing_ms": {
+    "resolution_ms": 0.3,
+    "routing_ms": 0.4,
+    "total_ms": 0.7
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "expected refusal/clarification decided from structured response fields",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "HYB-09",
+   "category": "hybrid",
+   "difficulty": "hard",
+   "question": "Which clients with a latest CI Total MOIC below 1.0x had a meeting since 2026-01-01 where it came up that nobody in the company holds a permanent finance-chief role?",
+   "semantic_stress": true,
+   "expected_route": "hybrid",
+   "route": "hybrid",
+   "status": "unsupported",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "threshold": 1.0,
+     "meeting_date_from": "2026-01-01"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R3_HYBRID",
+    "success": true
+   },
+   "answer": null,
+   "message": "Date ranges and date relations ('since', 'after', 'before', 'until', 'prior to', 'between') are not supported in this version, so nothing was searched. Ask about one exact date (for example 'on 2022-10-01') or without a date.",
+   "failure": {
+    "stage": "routing",
+    "code": "date_relation_unsupported",
+    "message": "Date ranges and date relations ('since', 'after', 'before', 'until', 'prior to', 'between') are not supported in this version, so nothing was searched. Ask about one exact date (for example 'on 2022-10-01') or without a date."
+   },
+   "validation": null,
+   "latency_ms": 1.4,
+   "timing_ms": {
+    "resolution_ms": 0.3,
+    "routing_ms": 0.9,
+    "total_ms": 1.4
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": "unsupported",
+   "meeting_intent": {
+    "mode": "unsupported",
+    "reason": "date relation 'since' applied to '2026-01-01' is not supported",
+    "cues": [],
+    "term_audit": {
+     "original_terms": null,
+     "final_terms": null,
+     "phrases": null,
+     "requested_fields": null
+    },
+    "removed": []
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "retrieval": {
+    "expected_total": 31,
+    "expected_in_top_k": 0,
+    "recall_at_k": 0.0,
+    "note": "no meeting evidence produced"
+   },
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": false
+   },
+   "result": "incorrect",
+   "failure_mode": {
+    "primary": "unsupported_or_ambiguity_handled",
+    "subtype": "date_relation_unsupported",
+    "explanation": "'since 2026-01-01' is a date relation, unsupported by the approved V1 rule; nothing was searched and no structured query ran. The semantic and intersection parts of the question were therefore not exercised.",
+    "secondary": [
+     "the structured side did not run; semantic retrieval and intersection remain untested"
+    ]
+   }
+  },
+  {
+   "id": "HYB-10",
+   "category": "hybrid",
+   "difficulty": "medium",
+   "question": "For client D12376, list the deal names in its investment records and the sectors and companies in its meetings.",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "hybrid",
+   "status": "error",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "D12376",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "D12376",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "D12376"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R3_HYBRID",
+    "success": true
+   },
+   "answer": null,
+   "message": "The generated answer failed validation and is withheld: numbers come from the evidence: numbers not found in the evidence: ['16']",
+   "failure": {
+    "stage": "validation",
+    "code": "validation_failed",
+    "message": "The generated answer failed validation and is withheld: numbers come from the evidence: numbers not found in the evidence: ['16']"
+   },
+   "validation": {
+    "valid": false,
+    "warnings": [
+     "small integers and years are grounded: not found in the evidence: ['8']"
+    ],
+    "reasons": [
+     "numbers come from the evidence: numbers not found in the evidence: ['16']"
+    ]
+   },
+   "latency_ms": 18759.2,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.6,
+    "structured_ms": 5399.8,
+    "meeting_ms": 5455.7,
+    "synthesis_ms": 7899.4,
+    "validation_ms": 2.9,
+    "total_ms": 18759.2
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT DISTINCT deal_name FROM investments WHERE client_id = 'D12376' ORDER BY deal_name",
+    "columns": [
+     "deal_name"
+    ],
+    "rows": [
+     [
+      "Atlas Private Equity II"
+     ],
+     [
+      "BluePeak Venture II"
+     ],
+     [
+      "BluePeak Venture III"
+     ],
+     [
+      "Emerald Real Estate Fund"
+     ],
+     [
+      "NorthBridge Growth Fund"
+     ],
+     [
+      "Orion Infrastructure I"
+     ],
+     [
+      "Orion Infrastructure IV"
+     ],
+     [
+      "Summit Credit Opportunities"
+     ]
+    ],
+    "row_count": 8
+   },
+   "meeting_evidence": null,
+   "meeting_mode": "aggregate",
+   "meeting_intent": {
+    "mode": "aggregate",
+    "reason": "no topical term; aggregate cue(s): attribute_list",
+    "cues": [
+     "attribute_list"
+    ],
+    "term_audit": {
+     "original_terms": [
+      "deal",
+      "names",
+      "investment",
+      "sectors",
+      "companies"
+     ],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": [
+      "sector",
+      "company"
+     ]
+    },
+    "removed": [
+     [
+      "deal",
+      "R2_field"
+     ],
+     [
+      "names",
+      "R3_structured"
+     ],
+     [
+      "investment",
+      "R3_structured"
+     ],
+     [
+      "sectors",
+      "R2_field"
+     ],
+     [
+      "companies",
+      "R2_field"
+     ]
+    ]
+   },
+   "meeting_aggregate_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT DISTINCT sector, company FROM meetings_meta WHERE client_id = 'D12376' ORDER BY sector, company",
+    "columns": [
+     "sector",
+     "company"
+    ],
+    "rows": [
+     [
+      "agritech",
+      "Redwood Partners"
+     ],
+     [
+      "consumer goods",
+      "Harbor Fund"
+     ],
+     [
+      "consumer goods",
+      "Summit Advisors"
+     ],
+     [
+      "edtech",
+      "Quantum Growth"
+     ],
+     [
+      "education (private schools)",
+      "Crescent Capital"
+     ],
+     [
+      "education (private schools)",
+      "NorthStar FO"
+     ],
+     [
+      "fintech",
+      "Astra Investments"
+     ],
+     [
+      "fintech",
+      "Harbor Fund"
+     ],
+     [
+      "healthcare",
+      "Pioneer LP"
+     ],
+     [
+      "logistics",
+      "Astra Investments"
+     ]
+    ],
+    "row_count": 16
+   },
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "incorrect",
+   "failure_mode": {
+    "primary": "validation_false_positive",
+    "subtype": "row_count_of_one_side_not_grounded",
+    "explanation": "Both sides were correct: 8/8 deal names and the 16 distinct sector/company rows (all 10 sectors and 11 companies). The complete answer was withheld because it stated '16' (the aggregate's row count); the validator wrapper merges the two sides' rows and sums their counts (8 + 16), so 16 alone is not a grounded number.",
+    "secondary": [
+     "evidence-level correct; the answer text was correct and complete but withheld"
+    ]
+   }
+  },
+  {
+   "id": "ADV-01",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "hard",
+   "question": "Show me the investments for client 12345.",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "clarification",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "12345",
+      "entity_type": "client",
+      "status": "ambiguous",
+      "canonical": null,
+      "match_rule": "numeric_suffix",
+      "candidates": [
+       "A12345",
+       "B12345",
+       "C12345",
+       "D12345"
+      ]
+     }
+    ],
+    "expected_entity": {
+     "ambiguous_numeric": "12345",
+     "candidates": [
+      "A12345",
+      "B12345",
+      "C12345",
+      "D12345"
+     ]
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": null,
+   "message": "'12345' is ambiguous; nothing is guessed. Please give the exact identifier or name.",
+   "failure": {
+    "stage": "entities",
+    "code": "ambiguous_entity",
+    "message": "'12345' is ambiguous; nothing is guessed. Please give the exact identifier or name."
+   },
+   "validation": null,
+   "latency_ms": 2.4,
+   "timing_ms": {
+    "resolution_ms": 1.9,
+    "routing_ms": 0.4,
+    "total_ms": 2.4
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "expected refusal/clarification decided from structured response fields",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "ADV-02",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "medium",
+   "question": "How many investment records does Client A12345 Holdings have?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "Client A12345 Holdings",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12345",
+      "match_rule": "exact_name",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_name_form": "Client A12345 Holdings",
+     "client_id": "A12345"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Client A12345 has 258 investment records [investments]. This is a row count of records, not a count of distinct deals.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 11308.7,
+   "timing_ms": {
+    "resolution_ms": 0.7,
+    "routing_ms": 0.4,
+    "structured_ms": 5979.1,
+    "synthesis_ms": 5328.0,
+    "validation_ms": 0.3,
+    "total_ms": 11308.7
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT COUNT(*) AS investment_record_count FROM investments WHERE client_id = 'A12345'",
+    "columns": [
+     "investment_record_count"
+    ],
+    "rows": [
+     [
+      258
+     ]
+    ],
+    "row_count": 1
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "exact: structured/meeting evidence vs expected value",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "ADV-03",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "hard",
+   "question": "Tell me about Summit.",
+   "semantic_stress": false,
+   "expected_route": "hybrid",
+   "route": "ambiguous",
+   "status": "clarification",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "Summit",
+      "entity_type": "untyped",
+      "status": "ambiguous",
+      "canonical": null,
+      "match_rule": "partial_name_diagnostic",
+      "candidates": [
+       "Summit Credit Opportunities",
+       "Summit Advisors"
+      ]
+     }
+    ],
+    "expected_entity": {
+     "ambiguous_name": "Summit",
+     "candidates": [
+      "Summit Credit Opportunities (deal_name)",
+      "Summit Advisors (meeting company)"
+     ]
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R1_NO_SIGNALS",
+    "success": true
+   },
+   "answer": null,
+   "message": "'Summit' is ambiguous; nothing is guessed. Please give the exact identifier or name.",
+   "failure": {
+    "stage": "entities",
+    "code": "ambiguous_entity",
+    "message": "'Summit' is ambiguous; nothing is guessed. Please give the exact identifier or name."
+   },
+   "validation": null,
+   "latency_ms": 0.4,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.2,
+    "total_ms": 0.4
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "scoring": {
+    "method": "expected refusal/clarification decided from structured response fields",
+    "evidence_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  },
+  {
+   "id": "ADV-05",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "medium",
+   "question": "What is the total investment amount across all records in the original currency?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "field": "Investment_Amount_Natural_Currency"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "There is no single total in the original currency, because the records are in six different currencies and the evidence gives no way to combine them. The totals by natural currency are (rounded to the nearest unit where needed):\n\n- AED: 21,059,118,120 [investments]\n- EUR: 20,491,847,787 [investments]\n- GBP: 20,880,959,986 [investments]\n- INR: 20,700,917,088 [investments]\n- SGD: 21,323,522,059 [investments]\n- USD: 21,177,181,411 [investments]\n\nA single cross-currency sum would need the USD-converted amounts, which are not in this evidence, so I have not produced one.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 12648.8,
+   "timing_ms": {
+    "resolution_ms": 0.1,
+    "routing_ms": 0.4,
+    "structured_ms": 5791.6,
+    "synthesis_ms": 6855.8,
+    "validation_ms": 0.8,
+    "total_ms": 12648.8
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "ok",
+    "sql": "SELECT natural_currency_code, SUM(investment_amount_natural_currency) AS total_amount FROM investments GROUP BY natural_currency_code ORDER BY natural_currency_code",
+    "columns": [
+     "natural_currency_code",
+     "total_amount"
+    ],
+    "rows": [
+     [
+      "AED",
+      21059118120.0
+     ],
+     [
+      "EUR",
+      20491847787.0
+     ],
+     [
+      "GBP",
+      20880959986.0
+     ],
+     [
+      "INR",
+      20700917088.0
+     ],
+     [
+      "SGD",
+      21323522059.0
+     ],
+     [
+      "USD",
+      21177181411.0
+     ]
+    ],
+    "row_count": 6
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "state that amounts in different currencies cannot be added",
+      "offer the USD total or per-currency totals"
+     ],
+     "must_not": [
+      "present 125,633,546,451 as the total"
+     ],
+     "reference_facts": {
+      "usd_total": 91123356224.62,
+      "naive_natural_sum": 125633546451.0,
+      "currencies": [
+       "AED",
+       "EUR",
+       "GBP",
+       "INR",
+       "SGD",
+       "USD"
+      ]
+     }
+    },
+    "expected_summary": "Refuse mixed-currency sum; USD total = 91,123,356,224.62",
+    "observation": "Per-currency totals, no mixed-currency sum (same as Baseline); a single USD total is not offered.",
+    "keyword_hints_not_a_score": {
+     "cannot be added|not add|mix": false,
+     "USD": true,
+     "125,633,546,451": false
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "ADV-06",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "hard",
+   "question": "Which clients did we meet recently?",
+   "semantic_stress": false,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "clarification",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "relative_time": "recently"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": null,
+   "message": "the question has no searchable terms and no entity or date filter; an unrestricted listing is not returned",
+   "failure": {
+    "stage": "clarification",
+    "code": "no_terms",
+    "message": "the question has no searchable terms and no entity or date filter; an unrestricted listing is not returned"
+   },
+   "validation": null,
+   "latency_ms": 0.6,
+   "timing_ms": {
+    "resolution_ms": 0.1,
+    "routing_ms": 0.2,
+    "meeting_ms": 0.1,
+    "total_ms": 0.6
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": {
+    "outcome": "no_terms",
+    "query_terms": [],
+    "filters": {
+     "client_ids": [],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": null,
+    "matched_count": null,
+    "top_k": 20,
+    "hits": []
+   },
+   "meeting_mode": "listing",
+   "meeting_intent": {
+    "mode": "listing",
+    "reason": "no topical term, no cue and no filter: the frozen retriever reports 'no terms' (clarification)",
+    "cues": [],
+    "term_audit": {
+     "original_terms": [],
+     "final_terms": [],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": []
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "states the reference date used, and that it is the runtime current date",
+      "states the window it takes 'recently' to mean (the data does not define one, so the system must state its choice)",
+      "uses the latest meeting date per client from meeting_notes_20k as 'last met'",
+      "states that the meeting data ends on 2026-03-13 and, whenever the window ends after that date, explicitly qualifies that the requested period exceeds source coverage and that the data does not show whether meetings occurred after 2026-03-13",
+      "if no client's latest meeting falls inside the window, says so instead of returning older meetings as 'recent'"
+     ],
+     "must_not": [
+      "treat the latest date in the data (2026-03-13) as 'today'",
+      "imply that the datasets contain data through the runtime date",
+      "use performance_data.Client_Last_Met_Date or As_Of_Date as the last-met date",
+      "silently choose a window without stating it"
+     ],
+     "reference_facts": {
+      "meeting_coverage_start": "2022-01-01",
+      "meeting_coverage_end": "2026-03-13",
+      "not_used_performance_client_last_met_end": "2025-01-16",
+      "coverage_check": "gap_days = runtime_date - 2026-03-13; if gap_days > 0 the coverage qualification is mandatory",
+      "illustration": "at the benchmark authoring date, 2026-09-26, the gap is 197 days"
+     },
+     "runtime_dependent": true
+    },
+    "expected_summary": "Reference date = runtime current date; window stated; last met from meeting_notes_20k; qualify when the window exceeds coverage (meetings end 2026-03-13)",
+    "observation": "Unchanged: clarification 'no_terms' (no searchable terms, no entity or date filter); no reference date, window or answer.",
+    "keyword_hints_not_a_score": {
+     "reference date|today|current date": false,
+     "90|days|window": false
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "ADV-07",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "hard",
+   "question": "Who is [email redacted] and how many investment records do they manage?",
+   "semantic_stress": false,
+   "expected_route": "investment",
+   "route": "investment",
+   "status": "clarification",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "[email]",
+      "entity_type": "rm",
+      "status": "not_found",
+      "canonical": null,
+      "match_rule": "non_authoritative_field",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "email": "[email redacted]"
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": null,
+   "message": "'[email]' is not found in the data; nothing is guessed. Please give the exact identifier or name.",
+   "failure": {
+    "stage": "entities",
+    "code": "entity_not_found",
+    "message": "'[email]' is not found in the data; nothing is guessed. Please give the exact identifier or name."
+   },
+   "validation": null,
+   "latency_ms": 0.5,
+   "timing_ms": {
+    "resolution_ms": 0.1,
+    "routing_ms": 0.3,
+    "total_ms": 0.5
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "state that the email field is unreliable/contradicts AccountRM and cannot identify the RM",
+      "if it reports AccountRM = Carlos Gomez counts, label them as record-level AccountRM counts"
+     ],
+     "must_not": [
+      "say the email owner manages 9,957 records",
+      "silently map the email to Carlos Gomez"
+     ],
+     "reference_facts": {
+      "records_with_email": 9957,
+      "AccountRM_breakdown_for_email": {
+       "Sara Khan": 2040,
+       "Daniel Lee": 2038,
+       "Rahul Mehta": 2029,
+       "Carlos Gomez": 1934,
+       "Priya Sharma": 1916
+      },
+      "records_AccountRM_Carlos_Gomez": 10032
+     }
+    },
+    "expected_summary": "Email is non-authoritative; it maps to all five AccountRM names",
+    "observation": "Unchanged: the email is treated as an unknown entity (entity_not_found); no explanation that the email field is unreliable.",
+    "keyword_hints_not_a_score": {
+     "unreliable|not authoritative|cannot identify|contradict": false,
+     "Carlos Gomez": false
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "ADV-08",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "medium",
+   "question": "What does the L3Y_DIS field mean in the performance data?",
+   "semantic_stress": false,
+   "expected_route": "performance",
+   "route": "performance",
+   "status": "unsupported",
+   "entity_resolution": {
+    "mentions": [],
+    "expected_entity": {
+     "abbreviation": "L3Y_DIS",
+     "columns": [
+      "CI_L3Y_DIS_Amount",
+      "RE_L3Y_DIS_Amount"
+     ]
+    },
+    "success": null
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": null,
+   "message": "Definitions are not stored in the data; the schema has no field-meaning metadata.",
+   "failure": {
+    "stage": "evidence",
+    "code": "unsupported_question",
+    "message": "Definitions are not stored in the data; the schema has no field-meaning metadata."
+   },
+   "validation": null,
+   "latency_ms": 5159.8,
+   "timing_ms": {
+    "resolution_ms": 0.2,
+    "routing_ms": 0.3,
+    "structured_ms": 5159.2,
+    "total_ms": 5159.8
+   },
+   "qualified": false,
+   "structured_evidence": {
+    "outcome": "unsupported_question",
+    "sql": null,
+    "columns": [],
+    "rows": [],
+    "row_count": 0
+   },
+   "meeting_evidence": null,
+   "meeting_mode": null,
+   "meeting_intent": null,
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": null,
+   "result": "needs_review",
+   "scoring": {
+    "method": "rule-based; not auto-scored"
+   },
+   "review": {
+    "rule": {
+     "must_include": [
+      "state that the meaning is not documented"
+     ],
+     "must_not": [
+      "expand L3Y_DIS into a definition as if it were documented"
+     ],
+     "reference_facts": {
+      "columns": [
+       "CI_L3Y_DIS_Amount",
+       "RE_L3Y_DIS_Amount"
+      ]
+     }
+    },
+    "expected_summary": "Undocumented: state so; do not invent an expansion",
+    "observation": "Status unsupported_question; message: 'Definitions are not stored in the data; the schema has no field-meaning metadata.' The message states the meaning is not documented; whether that meets the rule is for review.",
+    "keyword_hints_not_a_score": {
+     "not documented|undocumented|no metadata|no documentation": false
+    }
+   },
+   "failure_mode": {
+    "primary": "needs_review",
+    "secondary": []
+   }
+  },
+  {
+   "id": "ADV-10",
+   "category": "adversarial_edge_semantic",
+   "difficulty": "hard",
+   "question": "For client A12353, which meetings raised that part of the income arrives in dollars while costs are paid in local money?",
+   "semantic_stress": true,
+   "expected_route": "meeting",
+   "route": "meeting",
+   "status": "ok",
+   "entity_resolution": {
+    "mentions": [
+     {
+      "text": "A12353",
+      "entity_type": "client",
+      "status": "resolved",
+      "canonical": "A12353",
+      "match_rule": "exact_identifier",
+      "candidates": []
+     }
+    ],
+    "expected_entity": {
+     "client_id": "A12353"
+    },
+    "success": true
+   },
+   "routing": {
+    "rule": "R5_SINGLE_FAMILY",
+    "success": true
+   },
+   "answer": "Three of the 23 meetings in scope for client A12353 had a text match for this topic [meeting: 19047, 2024-01-07]. Each of the three says that about 30% of revenues are denominated in USD while expenses are largely local, and that a hedging policy and scenario P&L were requested:\n\n- **Meeting 19047, 2024-01-07** (company NorthStar FO): action items not recorded [meeting: 19047, 2024-01-07].\n- **Meeting 19238, 2025-02-24** (company BlueOak Partners): action items recorded, covering a one-page summary of operational fixes and introducing legal counsel to draft a shareholder agreement [meeting: 19238, 2025-02-24].\n- **Meeting 7568, 2025-03-06** (company GreenField Ventures): action item recorded to share detailed sensitivity tables [meeting: 7568, 2025-03-06].\n\nThe evidence shows only the matched text. It does not say which of these meetings first raised the point, and the company names differ across the three meetings.",
+   "message": null,
+   "failure": null,
+   "validation": {
+    "valid": true,
+    "warnings": [],
+    "reasons": []
+   },
+   "latency_ms": 7376.3,
+   "timing_ms": {
+    "resolution_ms": 0.5,
+    "routing_ms": 0.5,
+    "meeting_ms": 102.9,
+    "synthesis_ms": 7270.6,
+    "validation_ms": 1.5,
+    "total_ms": 7376.3
+   },
+   "qualified": false,
+   "structured_evidence": null,
+   "meeting_evidence": {
+    "outcome": "ok",
+    "query_terms": [
+     "part",
+     "income",
+     "arrives",
+     "dollars",
+     "while",
+     "costs",
+     "paid",
+     "local",
+     "money"
+    ],
+    "filters": {
+     "client_ids": [
+      "A12353"
+     ],
+     "group_id": null,
+     "meeting_date": null
+    },
+    "filtered_meeting_count": 23,
+    "matched_count": 3,
+    "top_k": 20,
+    "hits": [
+     {
+      "rank": 1,
+      "meeting_id": 19047,
+      "client_id": "A12353",
+      "meeting_date": "2024-01-07",
+      "matched_terms": [
+       "local"
+      ]
+     },
+     {
+      "rank": 2,
+      "meeting_id": 7568,
+      "client_id": "A12353",
+      "meeting_date": "2025-03-06",
+      "matched_terms": [
+       "local"
+      ]
+     },
+     {
+      "rank": 3,
+      "meeting_id": 19238,
+      "client_id": "A12353",
+      "meeting_date": "2025-02-24",
+      "matched_terms": [
+       "local"
+      ]
+     }
+    ]
+   },
+   "meeting_mode": "topical",
+   "meeting_intent": {
+    "mode": "topical",
+    "reason": "topical terms remain after removing request and field words",
+    "cues": [],
+    "term_audit": {
+     "original_terms": [
+      "part",
+      "income",
+      "arrives",
+      "dollars",
+      "while",
+      "costs",
+      "paid",
+      "local",
+      "money"
+     ],
+     "final_terms": [
+      "part",
+      "income",
+      "arrives",
+      "dollars",
+      "while",
+      "costs",
+      "paid",
+      "local",
+      "money"
+     ],
+     "phrases": [],
+     "requested_fields": []
+    },
+    "removed": []
+   },
+   "meeting_aggregate_evidence": null,
+   "unmatched_count": 20,
+   "retrieval": {
+    "expected_total": 3,
+    "expected_in_top_k": 3,
+    "recall_at_k": 1.0,
+    "ranks": {
+     "7568": 2,
+     "19047": 1,
+     "19238": 3
+    },
+    "returned": 3,
+    "top_k": 20,
+    "precision_in_returned": 1.0,
+    "scope_within_k": false
+   },
+   "answer_cited_meeting_ids": [
+    7568,
+    19047,
+    19238
+   ],
+   "scoring": {
+    "method": "id_set: evidence recall@K and cited-id set equality",
+    "evidence_correct": true,
+    "answer_correct": true
+   },
+   "result": "correct",
+   "failure_mode": {
+    "primary": "correct",
+    "secondary": []
+   }
+  }
+ ],
+ "semantic_stress": [
+  {
+   "id": "MEET-08",
+   "expected_evidence_sentence": "Operational readiness was discussed at length: the sponsor currently lacks a dedicated CFO and is outsourcing treasury functions, which increases execution risk.",
+   "expected_meeting_ids": [
+    3664,
+    5791,
+    9932
+   ],
+   "shared_content_words_declared": [],
+   "per_meeting": [
+    {
+     "meeting_id": 3664,
+     "retrieved": true,
+     "rank": 8,
+     "matched_terms": [
+      "cash",
+      "management"
+     ],
+     "overlap_with_evidence_sentence": [],
+     "judgement": "no matched term occurs in the evidence sentence: retrieved only because the client filter left few meetings"
+    },
+    {
+     "meeting_id": 5791,
+     "retrieved": true,
+     "rank": 4,
+     "matched_terms": [
+      "time",
+      "cash",
+      "management"
+     ],
+     "overlap_with_evidence_sentence": [],
+     "judgement": "no matched term occurs in the evidence sentence: retrieved only because the client filter left few meetings"
+    },
+    {
+     "meeting_id": 9932,
+     "retrieved": true,
+     "rank": 12,
+     "matched_terms": [
+      "management"
+     ],
+     "overlap_with_evidence_sentence": [],
+     "judgement": "no matched term occurs in the evidence sentence: retrieved only because the client filter left few meetings"
+    }
+   ],
+   "scope_meetings": 18,
+   "top_k": 20,
+   "returned": 15,
+   "scope_within_k": true,
+   "answer_cites_expected": []
+  },
+  {
+   "id": "HYB-09",
+   "expected_evidence_sentence": "Operational readiness was discussed at length: the sponsor currently lacks a dedicated CFO and is outsourcing treasury functions, which increases execution risk.",
+   "expected_meeting_ids": "31 ids",
+   "per_meeting": [],
+   "retrieved_expected": [],
+   "verdict": "no meeting evidence produced (status unsupported)"
+  },
+  {
+   "id": "ADV-10",
+   "expected_evidence_sentence": "Currency exposure is significant with ~30% of revenues denominated in USD but expenses largely local; a hedging policy and scenario P&L were requested.",
+   "expected_meeting_ids": [
+    7568,
+    19047,
+    19238
+   ],
+   "shared_content_words_declared": [
+    "local"
+   ],
+   "per_meeting": [
+    {
+     "meeting_id": 7568,
+     "retrieved": true,
+     "rank": 2,
+     "matched_terms": [
+      "local"
+     ],
+     "overlap_with_evidence_sentence": [
+      "local"
+     ],
+     "judgement": "matched only on the single word shared with the question (declared in the benchmark): lexical overlap, not semantic understanding; it was decisive only because no other meeting in scope contains that word"
+    },
+    {
+     "meeting_id": 19047,
+     "retrieved": true,
+     "rank": 1,
+     "matched_terms": [
+      "local"
+     ],
+     "overlap_with_evidence_sentence": [
+      "local"
+     ],
+     "judgement": "matched only on the single word shared with the question (declared in the benchmark): lexical overlap, not semantic understanding; it was decisive only because no other meeting in scope contains that word"
+    },
+    {
+     "meeting_id": 19238,
+     "retrieved": true,
+     "rank": 3,
+     "matched_terms": [
+      "local"
+     ],
+     "overlap_with_evidence_sentence": [
+      "local"
+     ],
+     "judgement": "matched only on the single word shared with the question (declared in the benchmark): lexical overlap, not semantic understanding; it was decisive only because no other meeting in scope contains that word"
+    }
+   ],
+   "scope_meetings": 23,
+   "top_k": 20,
+   "returned": 3,
+   "scope_within_k": false,
+   "answer_cites_expected": [
+    7568,
+    19047,
+    19238
+   ]
+  }
+ ]
+}

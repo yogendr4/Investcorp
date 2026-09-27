@@ -1,6 +1,6 @@
-# V1 Implementation Contract (v0.1)
+# V1 Implementation Contract (v0.2)
 
-Status: **proposed, not implemented.** This contract is derived strictly from the approved [`docs/evaluation/v1_diagnosis.md`](../evaluation/v1_diagnosis.md), with the two approved changes and the exclusions you stated. It extends [`baseline_contract.md`](baseline_contract.md); where they differ, section 9 lists the point and asks for a decision. No code, benchmark, holdout, metadata or Baseline file is touched by this document.
+Status: **approved and implemented in `src/v1/` (not yet measured on the benchmark).** Version 0.2 synchronizes this contract with the implemented behavior, without changing V1 behavior; the synchronized points are listed in section 11. This contract is derived strictly from the approved [`docs/evaluation/v1_diagnosis.md`](../evaluation/v1_diagnosis.md), with the two approved changes and the exclusions you stated. It extends [`baseline_contract.md`](baseline_contract.md); where they differ, section 9 lists the point and asks for a decision.
 
 ## 0. Sources and precedence
 
@@ -76,13 +76,16 @@ Applied to unquoted single words, after entity text, ISO dates and Baseline stop
 
 | Class | Removed | Initial contents (only words observed in failures; additions need recorded evidence) |
 |---|---|---|
-| R1 request/control | always (a question with a date relation applied to an ISO date never reaches term derivation: 4.3) | `many, date, dates, range, after, since, largest, estimated, involve, up, two` |
+| R1 request/control | always (a question with a date relation applied to a date expression never reaches term derivation: 4.3) | `many, date, dates, range, after, since, largest, estimated, involve, up, two` |
 | R2 field names of the meetings table (and plurals) | always | `company, companies, sector, sectors, region, regions, stage, stages, size, series, deal, deals` |
 | R3 structured-side vocabulary | hybrid questions only | `ci, re, hf, cop, total, current, moic, irr, aum, usd, amount, amounts, investment, investments, performance, snapshot, snapshots, names, below, above, than`, and multiples such as `0x`, `1.0x` |
+| R4 aggregate/listing cue words | always | `count, number, earliest, oldest, smallest, biggest, highest, lowest, maximum, minimum, distinct, different, unique, period` |
+
+**R4 (added in implementation).** R4 words are the cue vocabulary of the intent classifier (5.4) that is not already in R1: `smallest`, `earliest`, `lowest` and the like say what is asked, not what a meeting says, so they must not make an aggregate question topical. `largest` is in R1. `latest`, `most recent`, `last`, `recent` and `first` are already removed by the frozen Baseline stopword list, not by V1. R4 is applied only inside V1 term derivation (the meeting side of a `meeting` or `hybrid` route) and removes words from the *search terms* only; the classifier still reads the original question for its cues. A word such as `different` or `period` is removed even if it were topical in some question (a recorded regression risk).
 
 **Protected (never removed):** quoted phrases (kept as phrases); numeric tokens and the unit next to them (`128`, `bps`, `%`), except R3 multiples in hybrids; tokens of the entity text are already removed by the Baseline logic; the action-items handling (the words `action items` are not searched and the weight rule is unchanged).
 
-**Audit:** every derivation returns `term_audit = {kept: [...], removed: [{word, class}], phrases: [...]}`, stored in the response, so the evaluation can check that no evidence-bearing word was removed.
+**Audit:** every derivation returns a `TermAudit`, stored in the response as `meeting_intent.term_audit`: `original_terms` (what the frozen `derive_query` extracted), `removed` (each `{term, category, reason}`, categories `R1_request`, `R2_field`, `R3_structured`, `R4_cue`, `structured_signal`), `final_terms`, `phrases`, `hybrid`, `wants_action_items`, `meeting_date` (a bare ISO date found by the frozen code) and `requested_fields`, so the evaluation can check that no evidence-bearing word was removed.
 
 **Deterministic and lexical only:** no synonyms, no LLM rewriting, no stemming, no reranking (baseline_contract section 8 "Must NOT").
 
@@ -94,7 +97,7 @@ Applied to unquoted single words, after entity text, ISO dates and Baseline stop
 | No topical term and an entity, group or date filter exists | **Existing deterministic newest-first listing** of the filtered meetings (`rank_method = date_desc`), K unchanged (20; maximum 50). The evidence states it is a listing, not a topical match, and `N of M` when M exceeds K |
 | No topical term and no filter | Unchanged Baseline outcome (`no_terms`, clarification), unless V1-2 classifies it as an aggregate (5.4) |
 
-**Date relations are unsupported in V1.** If a relation word (`since`, `after`, `before`, `until`, `prior to`, `between`, `on or after`, `on or before`) applies to an ISO date in the question, V1 returns status `unsupported` (code `date_relation_unsupported`) with the message that date ranges and relations are not supported, and states that nothing was searched. It never converts the date into the Baseline exact-date filter, and it never drops the relation word and keeps the date. No evidence is collected and no Claude call is made; for a hybrid question the whole question is unsupported (no partial answer). A bare ISO date with no relation word ("the meeting on 2022-10-01") remains an exact-date filter, as in Baseline (MEET-02). Detection is a fixed rule on the question text, before term derivation and before any evidence step.
+**Date relations are unsupported in V1.** If a relation word (`since`, `after`, `before`, `until`, `prior to`, `between`, `on or after`, `on or before`) applies to a date expression in the question, V1 returns status `unsupported` (code `date_relation_unsupported`) with the message that date ranges and relations are not supported, and states that nothing was searched. A relation "applies" when the relation word is followed, optionally after the filler words `the`, `a`, `an`, `of`, `to` or `from`, by a date expression. **Date expressions** are: an ISO date (`2026-01-01`), a year-month (`2026-01`), a bare year (`19xx` or `20xx`), or a month name (full or abbreviated) with an optional day and a year (`March 2025`, `Mar 3, 2025`). This includes a bare year or a month-name date after such a relation (`since 2024`, `after March 2025`). The rule applies to the `meeting` and `hybrid` routes only; for a hybrid question the whole question is unsupported (no partial answer). V1 never converts the date into the Baseline exact-date filter, and never drops the relation word and keeps the date. No evidence is collected and no Claude call is made. A bare ISO date with no relation word ("the meeting on 2022-10-01") remains an exact-date filter, as in Baseline (MEET-02); a relation word with no date expression ("after its latest snapshot") is not a date relation here; a bare year without a relation word is an ordinary search term. Detection is a fixed pattern on the question text, before term derivation and before any evidence step. Known effect: a phrase such as "after 2024 budget" is treated as a date relation.
 
 Entity-first filtering is unchanged (client, group, exact date; ambiguity or unknown entity gate first; an RM is unsupported; a deal is search text only). Raw text and mojibake are preserved (A11). K and the FTS index are unchanged.
 
@@ -117,7 +120,7 @@ The size cap (16,000 characters, lowest-ranked hits dropped first) is unchanged.
 | Expected benefit | HYB-01 and HYB-03 correct; HYB-05 rule satisfied (meeting 706, date, action items); MEET-07's correct answer accepted |
 | Regression risks | A removed word may be topical in some meeting question (`company`, `deal`, `size`, `stage`); an unranked listing may be read as a topical match; larger prompts; the model may cite `[meeting evidence]` again (the frozen notation rule stays) |
 | Metrics vs Baseline | Per-question term lists before/after (from `term_audit`); topical meeting questions' terms identical to Baseline for MEET-02, MEET-07, MEET-10, ADV-10 (no evidence-bearing word lost); evidence correctness and final status for HYB-01/03/05; answers withheld by validation and their reasons; prompt characters and trimmed-evidence flag; latency |
-| Evidence the change failed | A lexical control (MEET-02/07/10, ADV-10) loses evidence or changes result; HYB-01 or HYB-03 still lack the latest meeting although `term_audit` shows correct terms (the diagnosis would then be wrong); more answers withheld by validation than Baseline (excluding MEET-07); an answer presents a listing as topical matches; a question with "since/after/before <ISO date>" is answered or filtered as an exact date instead of returning `unsupported` |
+| Evidence the change failed | A lexical control (MEET-02/07/10, ADV-10) loses evidence or changes result; HYB-01 or HYB-03 still lack the latest meeting although `term_audit` shows correct terms (the diagnosis would then be wrong); more answers withheld by validation than Baseline (excluding MEET-07); an answer presents a listing as topical matches; a question with a date relation ("since/after/before/until/prior to/between" applied to an ISO date, year-month, bare year or month-name date) is answered, or filtered as an exact date, instead of returning `unsupported` |
 | Result / remaining limitation | Filled in after the run (CLAUDE.md section 6) |
 
 ## 5. V1-2: Meeting aggregates
@@ -144,16 +147,32 @@ A read-only SQL view `meetings_meta` over `meetings` (created by the V1 engine o
 | Column | Notes |
 |---|---|
 | `meeting_id`, `client_id`, `group_id`, `meeting_date` | group membership is the meetings source's own (baseline_contract section 3) |
-| `company`, `sector`, `region`, `investment_stage` | vocabularies given to the generator from the database: 15 companies, 12 sectors, 6 regions, 7 stages (`growth`, `late_stage`, `pre-seed`, `private_equity`, `seed`, `series_a`, `series_b`) |
-| `deal_size_estimate` (raw text), `deal_size_estimate_usd`, `deal_size_estimate_parse_status` | numeric derived value, raw preserved; parse status is `ok` for all 20,000 rows today; a row with a non-`ok` status is excluded from A4 and counted |
+| `company`, `sector`, `region`, `stage` | `stage` is `meetings.investment_stage` renamed. Vocabularies are read from the database and given to the generator: 15 companies, 12 sectors, 6 regions, 7 stages (`growth`, `late_stage`, `pre-seed`, `private_equity`, `seed`, `series_a`, `series_b`) |
+| `deal_size_estimate_raw` | the raw text as stored (`meetings.deal_size_estimate`), e.g. `150M USD` |
+| `deal_size_estimate_usd` | the numeric value in USD; **NULL unless the parse status is `ok`** (the parse-status column itself is not exposed). The aggregate SQL ignores NULL values for largest/smallest (rule in the prompt); all 20,000 rows are `ok` today |
 
-**Not exposed:** `summary`, `attendees`, `action_items`, `summary_char_length`, `source_row`. Text is retrieval's job; aggregates are over metadata. (A record lookup that needs action items, such as HYB-05, is V1-1.)
+These are exactly ten columns, in this order: `meeting_id, client_id, group_id, meeting_date, company, sector, region, stage, deal_size_estimate_raw, deal_size_estimate_usd`.
+
+**View definition and the no-op predicate.** The view is created as a TEMP view on the engine's read-only connection:
+
+```sql
+CREATE TEMP VIEW meetings_meta AS SELECT meeting_id, client_id, group_id, meeting_date, company, sector, region,
+  investment_stage AS stage, deal_size_estimate AS deal_size_estimate_raw,
+  CASE WHEN deal_size_estimate_parse_status = 'ok' THEN deal_size_estimate_usd END AS deal_size_estimate_usd
+FROM meetings WHERE meeting_id IS NOT NULL
+```
+
+`WHERE meeting_id IS NOT NULL` is a **no-op condition** (no meeting has a NULL `meeting_id`: 0 of 20,000; it changes no result). It exists for the frozen `SqlGuard`: its authorizer decides what a query reads from the events SQLite reports. For a bare `SELECT COUNT(*) FROM meetings_meta` on a view with no filter, SQLite flattens the view and reports a final read of the base table `meetings` with an empty column and no view name, which the guard cannot distinguish from a direct `SELECT COUNT(*) FROM meetings` and therefore denies. With the predicate, every read is attributed to the view, so a bare count is accepted while a direct read of `meetings` is still denied. The Baseline performance views avoid the same problem because they carry a real filter. The guard is approved with only the view and its ten columns (`approved = {meetings_meta: <ten columns>}`, `views = {meetings_meta}`); no base table is approved.
+
+**Not exposed:** `summary`, `attendees`, `action_items`, `summary_char_length`, `source_row`, `deal_size_estimate_parse_status`. Text is retrieval's job; aggregates are over metadata. (A record lookup that needs action items, such as HYB-05, is V1-1.)
 
 ### 5.3 Guard and engine
 
 - A new V1 engine (`MeetingAggregateEngine`) follows the Baseline `StructuredQueryEngine` pattern: entity gate, one LLM call, JSON `{sql, explanation}`, static scan and authorizer guard, `EXPLAIN` compile, read-only execution with row cap 50 and timeout 10 s.
 - It reuses the frozen `SqlGuard` and `static_scan` (their approved objects are parameters). If the guard cannot accept the new object without editing a Baseline file, implementation stops and reports **BLOCKED** (CLAUDE.md section 11).
 - **Single object only:** exactly one approved object (`meetings_meta`) may be referenced. Any second object, join, subquery over another source, the FTS table, or a base table is rejected. This is the "no raw three-way joins" rule made mechanical.
+- **No JOIN of any kind (implementation constraint).** Any statement containing the `JOIN` keyword is rejected (`join_not_allowed`), including a self-join of the view and any join to another source. This is an additional V1 constraint on top of the single-object check.
+- **Resolved entity literal required.** A query is rejected (`entity_constraint_missing`) if it does not use the resolved client id or group id given to the generator.
 - **No autonomous repair and no retry.** A rejected or failing query is reported once.
 - **Outcomes** mirror Baseline: `ok`, `empty_result`, `clarification_needed`, `entity_not_found`, `no_meeting_data`, `unsupported_question`, `llm_failure`, `malformed_llm_output`, `missing_sql`, `sql_rejected`, `execution_error`, `timeout`.
 - **Entity semantics** are the Baseline retriever's: resolved client sets `client_id = X` (a meeting-only client works); resolved group sets `group_id = N` with membership from the meetings source only (noted in the evidence); ambiguous or unknown entity stops before any SQL; an RM is `unsupported` (no RM field, A2/A3); a deal name or id is `unsupported` for aggregation (meetings carry no deal field, A5), not silently ignored.
@@ -167,10 +186,10 @@ Order of rules:
 
 | # | Condition | Mode |
 |---|---|---|
-| 0 | A date relation applies to an ISO date (4.3) | **unsupported** (`date_relation_unsupported`); no evidence, no Claude call |
+| 0 | A date relation applies to a date expression (4.3) | **unsupported** (`date_relation_unsupported`); no evidence, no Claude call |
 | 1 | A topical term or quoted phrase remains after V1-1 term derivation | **topical** retrieval (count cues are ignored; `matched_count` is reported as a lexical count with its caveat) |
-| 2 | No topical term and an aggregate cue: `how many`, `number of`, `count`, `earliest`, `oldest`, `first meeting`, `date range`, `over what period`, `largest/biggest/highest/smallest/lowest` with `deal size`, plural attribute nouns after `which/what` (`sectors`, `regions`, `companies`, `stages`), `distinct`, `different`, `unique` | **aggregate** (V1-2) |
-| 3 | No topical term and a record-lookup cue: `latest`, `most recent`, `last meeting`, `action items`, an explicit date, or a bare entity filter | **listing** (V1-1) |
+| 2 | No topical term and an aggregate cue: `how many`, `number of`, `count`, `earliest`, `oldest`, `first meeting`, `date range`, `over what period` or `what period`, `distinct`, `unique`, `different`, a plural attribute noun (`sectors`, `regions`, `companies`, `stages`), or `largest/biggest/highest/smallest/lowest/maximum/minimum` within 40 characters of `deal`, `size`, `estimate` or `estimated` | **aggregate** (V1-2) |
+| 3 | No topical term and a record-lookup cue (`latest`, `most recent`, `last met`, `last meeting`, `newest`, `action items`) or a filter (a resolved client or group, or a bare exact date) | **listing** (V1-1) |
 | 4 | No topical term, no cue, no filter | unchanged Baseline outcome (`no_terms` clarification) |
 
 Ambiguity between 2 and 3 is resolved by the cue table (latest is a lookup, earliest and range are aggregates) because the listing is newest-first, so the latest meeting is always in it and the earliest can be cut off when the scope exceeds K.
@@ -232,14 +251,14 @@ V1 is **not expected** to fix MEET-08 or HYB-09. HYB-09 will return `unsupported
 |---|---|---|
 | D-V1-1 | **Code layout.** Baseline stays frozen, so V1 is a new package `src/v1/` (and `tests/v1/`) that imports Baseline modules and adds `meeting_terms`, `meeting_intent`, `meeting_aggregates`, `synthesis`, `validation`, `service`. This applies baseline_contract D9 (`src/baseline/`, later `src/v1/`) | Approve |
 | D-V1-2 | **Enabling adaptations** (section 6): a V1 synthesis extension and a validation wrapper. They are outside the literal two changes but required: without them V1 evidence would be rejected by the frozen validator. The diagnosis said "leave the validator alone"; that holds for the checks, not for grounding new evidence | Approve, with the wrapper limited as stated |
-| D-V1-3 | **DECIDED: date relations are explicitly unsupported in V1.** A question that applies `since`, `after`, `before`, `until`, `prior to` or `between` to an ISO date returns `unsupported` (`date_relation_unsupported`) with no evidence and no Claude call. The system must not silently reinterpret "since <date>" as an exact-date filter. A bare ISO date remains an exact-date filter (MEET-02). HYB-09 will therefore return `unsupported` in V1 (still not correct) | Decided by you; specified in 4.3 and 5.4 rule 0 |
-| D-V1-4 | **Approved object** `meetings_meta`: name, the columns in 5.2, and the exclusion of text columns | Approve |
+| D-V1-3 | **DECIDED: date relations are explicitly unsupported in V1.** A question that applies `since`, `after`, `before`, `until`, `prior to` or `between` to a date expression (ISO date, year-month, bare year or month-name date) returns `unsupported` (`date_relation_unsupported`) with no evidence and no Claude call, on the `meeting` and `hybrid` routes. The system must not silently reinterpret "since <date>" as an exact-date filter. A bare ISO date remains an exact-date filter (MEET-02). HYB-09 will therefore return `unsupported` in V1 (still not correct) | Decided by you; specified in 4.3 and 5.4 rule 0 |
+| D-V1-4 | **DECIDED: approved object** `meetings_meta` with the ten columns in 5.2 (`stage`, `deal_size_estimate_raw`, `deal_size_estimate_usd`), the no-op predicate in 5.2, and the exclusion of text columns | Decided by you; implemented |
 | D-V1-5 | **Classifier**: V1 wraps the frozen router with the cue rules of 5.4 instead of changing the router | Approve |
 | D-V1-6 | **Listing size** stays K = 20 (maximum 50); scopes above 20 are shown as `N of M` | Keep |
 | D-V1-7 | **Scoring**: headline uses the identical Baseline scoring plus the pre-registered aggregate evaluators (7.3); the sensitivity view (7.4) is separate; MEET-10 stays `needs_review` | Approve |
 | D-V1-8 | **Fixing the Baseline reference.** `src/` is currently untracked in git. A commit and tag of the Baseline state needs your explicit approval; the alternative is a SHA-256 manifest of `src/baseline/` recorded under `docs/evaluation/` | Manifest now; commit and tag when you approve |
 | D-V1-9 | **DECIDED: the optional Baseline variance re-run is not required.** The recorded Baseline results (`baseline_results.md/json`) are the reference; LLM variance on unchanged paths is reported as such (section 7, item 7) | Decided by you |
-| D-V1-10 | **Initial term lists** (4.2) and **cue lists** (5.4), taken only from failures observed | Approve; additions require recorded evidence |
+| D-V1-10 | **Initial term lists** (4.2, classes R1 to R4) and **cue lists** (5.4), taken only from failures observed and from the contract's cue vocabulary | Approve; additions require recorded evidence |
 
 ## 10. Consistency check
 
@@ -271,3 +290,26 @@ Against `baseline_contract.md`:
 | Section 16: non-goals | all retained |
 | D9 code layout | applied as D-V1-1 |
 | Assumptions A2, A3, A5, A8, A11, A13 | preserved |
+
+## 11. Implementation record
+
+### 11.1 Synchronization of this contract with `src/v1/` (version 0.2; no V1 behavior changed)
+
+| Point | Section | Note |
+|---|---|---|
+| `meetings_meta` columns are `meeting_id, client_id, group_id, meeting_date, company, sector, region, stage, deal_size_estimate_raw, deal_size_estimate_usd`; the parse-status column is not exposed | 5.2, D-V1-4 | v0.1 named `investment_stage`, `deal_size_estimate` and a parse-status column |
+| The view contains the no-op `WHERE meeting_id IS NOT NULL`, and why | 5.2 | needed by the frozen guard for a bare `COUNT(*)` |
+| Removal class R4 (aggregate/listing cue words) | 4.2 | `largest` stays in R1; `latest`, `most recent`, `last`, `first` are Baseline stopwords |
+| Date-relation rule covers year-month, bare years and month-name dates; meeting and hybrid routes only | 4.3, 5.4 rule 0, D-V1-3, 4.5 | behavior unchanged from the implementation |
+| Any `JOIN` is rejected by the aggregate path; the resolved entity literal is required | 5.3 | implementation constraints |
+| Audit fields, the cue lists of rules 2 and 3 | 4.2, 5.4 | wording aligned with the code |
+| Deal-size rows that are not parsed are excluded by the SQL rule (`IS NOT NULL`), not "counted" | 5.2 | v0.1 said "excluded from A4 and counted" |
+
+### 11.2 Notes from the fresh manual validation (5 questions, none from the benchmark, real Claude CLI)
+
+- **One synthesis/citation rule was clarified after Question 4 was withheld.** Question 4 ("How many of client A12409's meetings mention hedging?") was rejected by validation because the answer cited `[meetings]` for a count of lexical matches, which is reserved for aggregate evidence. V1 synthesis rule 9 now says: cite with `[meetings]` only facts from the AGGREGATE MEETING EVIDENCE block; facts from the MEETING EVIDENCE block, including its counts, are cited with `[meeting: <id>, <date>]` of a meeting shown there. The validation logic was not changed. All five questions were then re-run.
+- **No benchmark question was changed** (none was used for the manual validation).
+- **This clarification is part of the final V1 implementation that will be measured** on the visible benchmark.
+- **A separate false-claim issue remains unresolved and is intentionally deferred.** On the deal-size question (Question 3) the answer gave the correct value (31,000 USD, meeting 2944) but stated that only one meeting had a parsed deal size, although all 19 do: the model read `LIMIT 1` as a count. Validation cannot detect statements about the query. This is the pattern behind the deferred third change (showing the query to the synthesizer, section 1). It has not been fixed, and it is expected to remain visible in the V1 measurement.
+
+See `v1_implementation.md` for the implementation description and the manual validation table.
