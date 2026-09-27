@@ -423,6 +423,35 @@ class TestExecution(Base):
         with self.assertRaises(FileNotFoundError):
             sq.StructuredQueryEngine(sq.EngineConfig(db_path=self.tmp / "missing.sqlite"))
 
+    def test_engine_is_usable_from_a_different_thread_than_the_one_that_constructed_it(self):
+        """Regression: a sqlite3.Connection may only be used by the thread that created it. An
+        engine built on one thread (for example a cached UI resource) must still work when
+        called from another, without a cross-thread ProgrammingError, and existing DB safety
+        (the read-only authorizer) must still apply on that other thread too."""
+        import threading
+
+        e = self.engine()
+        results: list = []
+        errors: list = []
+
+        def worker():
+            try:
+                results.append(e.execute_sql("SELECT COUNT(*) FROM investments", "investment"))
+                with self.assertRaises(sqlite3.Error):
+                    e.conn.execute("DELETE FROM investments")
+            except Exception as exc:  # noqa: BLE001 - captured for assertion below, not swallowed
+                errors.append(exc)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join(timeout=10)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].outcome, sq.OK)
+        self.assertEqual(results[0].rows, ((64,),))
+        # the constructing (main) thread must still work afterwards, on its own connection
+        self.assertEqual(e.execute_sql("SELECT COUNT(*) FROM investments", "investment").rows, ((64,),))
+
 
 @unittest.skipUnless(data_build.DEFAULT_DB.is_file(), "Baseline database not built")
 class TestRealDatabase(unittest.TestCase):

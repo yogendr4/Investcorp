@@ -445,6 +445,50 @@ class TestQuestions(SyntheticCase):
         self.assertEqual(res.mentions[0].resolution.canonical, None)
 
 
+class TestLobPhrasesAreNotEntities(SyntheticCase):
+    """Regression tests for the LOB-phrase-as-entity bug: "Private Equity", "Hedge Fund", "Real
+    Estate", "Credit Opportunity" and "Infrastructure" are canonical LOB concepts (A15), not deal
+    names, even though some of them are word-for-word substrings of this fixture's fictional deal
+    names ("Emerald Real Estate Fund", "Orion Infrastructure I/IV", "Summit Credit Opportunities").
+    A question naming one of them must not stop at entity resolution."""
+
+    def test_lob_phrases_produce_no_mention_even_though_they_partially_match_a_deal_name(self):
+        for phrase in ("Real Estate", "Infrastructure", "Credit Opportunity"):
+            with self.subTest(phrase=phrase):
+                res = self.r.resolve_question(f"How is A12345 performing in {phrase}?")
+                self.assertEqual([m.text for m in res.mentions], ["A12345"])   # no second mention for the LOB phrase
+
+    def test_lob_phrase_alone_is_still_not_an_entity(self):
+        for phrase in ("Private Equity", "Hedge Fund", "Real Estate", "Credit Opportunity", "Infrastructure"):
+            with self.subTest(phrase=phrase):
+                res = self.r.resolve_question(f"What is the latest {phrase} multiple?")
+                self.assertEqual(res.mentions, ())
+
+    def test_real_deal_name_still_resolves_even_though_it_contains_a_lob_phrase(self):
+        # "Emerald Real Estate Fund" contains the LOB phrase "Real Estate", but the full deal
+        # name is matched first (exact whole-tuple match), before the LOB-phrase check ever runs.
+        res = self.r.resolve_question("Tell me about Emerald Real Estate Fund")
+        self.assertEqual([(m.text, m.resolution.entity_type, m.resolution.status, m.resolution.canonical) for m in res.mentions],
+                         [("Emerald Real Estate Fund", er.DEAL_NAME, er.RESOLVED, "Emerald Real Estate Fund")])
+        res = self.r.resolve_question("What deals exist under Summit Credit Opportunities?")
+        self.assertEqual([(m.resolution.entity_type, m.resolution.status, m.resolution.canonical) for m in res.mentions],
+                         [(er.DEAL_NAME, er.RESOLVED, "Summit Credit Opportunities")])
+
+    def test_ambiguous_real_deal_name_remains_ambiguous_and_is_not_suppressed_by_the_lob_check(self):
+        # "Orion Infrastructure" is a genuine partial match of two real deal names and is not a
+        # canonical LOB phrase itself (the LOB phrase is "Infrastructure" alone); it must still
+        # surface as the existing ambiguous-diagnostic mention, unaffected by this fix.
+        res = self.r.resolve_question("What about Orion Infrastructure?")
+        self.assertEqual([(m.resolution.status, m.resolution.match_rule) for m in res.mentions], [(er.AMBIGUOUS, er.PARTIAL_NAME)])
+
+    def test_existing_entity_resolution_behavior_is_otherwise_unchanged(self):
+        # A spot check that ordinary exact/normalized/partial resolution (none of it LOB-phrase
+        # related) is untouched by this fix.
+        self.assertEqual(self.r.resolve(er.DEAL_NAME, "Orion Infrastructure I").status, er.RESOLVED)
+        self.assertEqual(self.r.resolve(er.CLIENT, "A12345").status, er.RESOLVED)
+        self.assertEqual(self.r.resolve(er.DEAL_NAME, "BluePeak Venture").status, er.AMBIGUOUS)
+
+
 class TestApi(SyntheticCase):
     def test_result_fields(self):
         d = self.r.resolve(er.CLIENT, "A12345").to_dict()

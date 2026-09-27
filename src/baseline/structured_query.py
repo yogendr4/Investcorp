@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -132,21 +133,50 @@ def parse_llm_output(text: str) -> tuple[Optional[dict], Optional[str]]:
 
 # ---------------------------------------------------------------- engine
 class StructuredQueryEngine:
+    """Opens one SQLite connection (and its authorizer-bound SqlGuard) per thread, lazily, on
+    first use. A sqlite3.Connection may only be used by the thread that created it (SQLite's own
+    rule); the engine itself is a plain object that may legitimately be constructed on one thread
+    (for example a cached UI resource) and then called from others, so the connection cannot be
+    opened once in __init__ and shared. threading.local() gives each calling thread its own
+    connection and guard, opened once per thread and reused for that thread's later calls.
+    """
+
     def __init__(self, config: EngineConfig = EngineConfig(), adapter: Any = None) -> None:
         self.config = config
         self._adapter = adapter
-        db = Path(config.db_path)
-        if not db.is_file():
-            raise FileNotFoundError(f"Baseline database not found: {db} (build it with: python -m src.baseline.build_db)")
-        self.conn = sqlite3.connect(f"{db.resolve().as_uri()}?mode=ro", uri=True)
+        self._db = Path(config.db_path)
+        if not self._db.is_file():
+            raise FileNotFoundError(f"Baseline database not found: {self._db} (build it with: python -m src.baseline.build_db)")
+        self._local = threading.local()
+
+    def _open(self) -> tuple[sqlite3.Connection, "SqlGuard"]:
+        conn = sqlite3.connect(f"{self._db.resolve().as_uri()}?mode=ro", uri=True)
         for ddl in view_ddl():                       # deterministic rules live in these views
-            self.conn.execute(ddl)
-        self.conn.execute("PRAGMA query_only = ON")
-        self.guard = SqlGuard(self.conn, approved_columns(), set(PERF_VIEWS))
-        self.guard.install()
+            conn.execute(ddl)
+        conn.execute("PRAGMA query_only = ON")
+        guard = SqlGuard(conn, approved_columns(), set(PERF_VIEWS))
+        guard.install()
+        return conn, guard
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        if getattr(self._local, "conn", None) is None:
+            self._local.conn, self._local.guard = self._open()
+        return self._local.conn
+
+    @property
+    def guard(self) -> "SqlGuard":
+        if getattr(self._local, "guard", None) is None:
+            self._local.conn, self._local.guard = self._open()
+        return self._local.guard
 
     def close(self) -> None:
-        self.conn.close()
+        """Closes this thread's connection only, if this thread ever opened one."""
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
+            self._local.guard = None
 
     def __enter__(self):
         return self

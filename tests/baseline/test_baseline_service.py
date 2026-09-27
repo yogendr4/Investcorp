@@ -116,6 +116,35 @@ class TestEndToEnd(Base):
         self.assertEqual((r.status, r.route), (sv.OK, "performance"))
         self.assertEqual(self.engine.calls, [(Q_PERF, "performance")])
 
+    def test_lob_phrase_question_reaches_evidence_collection_not_entity_clarification(self):
+        """Regression: "Private Equity" must not be treated as an ambiguous deal_name mention
+        (it is a canonical LOB concept, A15); the question must reach the structured engine
+        (evidence collection), not stop at entity-resolution clarification."""
+        q = "What is client A12345's latest reported Private Equity multiple?"
+        ev = s_ev(rows=(("A12345", "2022-01-01", 1.22),), columns=("client_id", "as_of_date", "ci_current_moic"), source="performance", route="performance")
+        r = self.svc(structured=ev, answer="Client A12345's latest CI multiple is 1.22x as of 2022-01-01 [performance].").answer_question(q)
+        self.assertEqual((r.status, r.route), (sv.OK, "performance"))
+        self.assertEqual(self.engine.calls, [(q, "performance")])
+        self.assertEqual([m["canonical"] for m in r.resolution["mentions"]], ["A12345"])
+
+    def test_lob_metric_plus_meeting_question_routes_hybrid_and_collects_both_evidence_sides(self):
+        """Regression (Q7): "What is A12360's latest Private Equity multiple, and what came up in
+        its most recent meeting?" previously routed to meeting-only (the LOB-metric phrase was
+        only a weak performance signal), so a synthesized answer cited performance evidence that
+        was never fetched and the frozen validator correctly withheld it. It must now route to
+        hybrid and actually collect both the structured and the meeting evidence."""
+        q = "What is A12345's latest Private Equity multiple, and what came up in its most recent meeting?"
+        ev = s_ev(rows=(("A12345", "2024-02-22", 1.22),), columns=("client_id", "as_of_date", "ci_current_moic"), source="performance", route="performance")
+        s = self.svc(structured=ev, meeting=m_ev(),
+                     answer="A12360's latest CI multiple is 1.22x as of 2024-02-22 [performance]. Meeting 1 notes a CFO gap [meeting: 1, 2024-01-10].")
+        r = s.answer_question(q)
+        self.assertEqual((r.status, r.route), (sv.OK, "hybrid"))
+        self.assertEqual(len(self.engine.calls), 1)
+        self.assertEqual(self.engine.calls[0][1], "performance")
+        self.assertEqual(len(self.retriever.calls), 1)
+        self.assertIsNotNone(r.structured_evidence)
+        self.assertIsNotNone(r.meeting_evidence)
+
     def test_meeting(self):
         r = self.svc(meeting=m_ev(), answer="Meeting 1 records that the sponsor lacks a dedicated CFO [meeting: 1, 2024-01-10].").answer_question(Q_MEET)
         self.assertEqual((r.status, r.route), (sv.OK, "meeting"))

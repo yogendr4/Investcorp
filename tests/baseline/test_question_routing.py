@@ -64,6 +64,8 @@ HYBRID_CASES = [
     "How many meetings took place after the latest performance snapshot?",
     "Which clients with AUM above 10M discussed refinancing in meetings?",
     "What action items were recorded at the latest meeting for the client with the highest IRR?",
+    "What is A12360's latest Private Equity multiple, and what came up in its most recent meeting?",
+    "What is client A12345's Hedge Fund IRR, and what was discussed in their last meeting?",
 ]
 AMBIGUOUS_CASES = [
     ("Tell me about Client A", "no_intent_signals"),
@@ -118,6 +120,45 @@ class TestRoutesByCategory(unittest.TestCase):
     def test_client_status_phrase_names_the_investments_field(self):
         self.assertEqual(route_question("What is the client status of A12345?").route, INVESTMENT)
         self.assertEqual(route_question("What is the performance status of A12345?").route, PERFORMANCE)
+
+
+class TestLobMetricPhraseIsAStrongPerformanceSignal(unittest.TestCase):
+    """Regression: a canonical LOB name (A15) directly naming a metric ("Private Equity multiple",
+    "Hedge Fund IRR") was previously only a WEAK performance signal ("latest"/"multiple" alone),
+    so a question combining it with a strong meeting phrase ("most recent meeting", "came up")
+    routed to meeting-only (R5_SINGLE_FAMILY) instead of hybrid, and the resulting answer cited
+    performance evidence that was never fetched."""
+
+    def test_the_exact_reported_question_routes_to_hybrid(self):
+        r = route_question("What is A12360's latest Private Equity multiple, and what came up in its most recent meeting?")
+        self.assertEqual((r.route, r.status, r.rule), (HYBRID, "routed", "R3_HYBRID"))
+        self.assertTrue(any(s.family == PERFORMANCE and s.strength == qr.STRONG and s.rule == "P_LOB_METRIC" for s in r.signals))
+        self.assertTrue(any(s.family == MEETING and s.strength == qr.STRONG for s in r.signals))
+
+    def test_an_analogous_natural_language_hybrid_question_also_routes_correctly(self):
+        r = route_question("What is client A12345's Hedge Fund IRR, and what was discussed in their last meeting?")
+        self.assertEqual((r.route, r.rule), (HYBRID, "R3_HYBRID"))
+
+    def test_the_lob_metric_phrase_alone_with_no_meeting_signal_stays_performance(self):
+        r = route_question("What is the latest Real Estate MOIC for client A12360?")
+        self.assertEqual((r.route, r.rule), (PERFORMANCE, "R5_SINGLE_FAMILY"))
+
+    def test_bare_multiple_or_latest_without_a_lob_phrase_is_unaffected_and_stays_weak(self):
+        # the fix is scoped to "<LOB phrase> <metric word>"; a bare "multiple" or "latest" next to
+        # a strong meeting signal must still route to meeting-only, exactly as before this fix.
+        r = route_question("What is the latest multiple, and what came up in its most recent meeting?")
+        self.assertEqual((r.route, r.rule), (MEETING, "R5_SINGLE_FAMILY"))
+
+    def test_existing_structured_only_and_meeting_only_cases_are_unaffected(self):
+        for q in INVESTMENT_CASES:
+            with self.subTest(question=q):
+                self.assertEqual(route_question(q).route, INVESTMENT)
+        for q in PERFORMANCE_CASES:
+            with self.subTest(question=q):
+                self.assertEqual(route_question(q).route, PERFORMANCE)
+        for q in MEETING_CASES:
+            with self.subTest(question=q):
+                self.assertEqual(route_question(q).route, MEETING)
 
 
 class TestKeywordPresenceAloneDoesNotDecide(unittest.TestCase):

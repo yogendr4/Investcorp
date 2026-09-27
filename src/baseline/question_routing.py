@@ -45,6 +45,9 @@ SIGNAL_RULES: tuple[SignalRule, ...] = (
     _r("M_LATEST_MEETING", MEETING, STRONG, r"\b(?:latest|most\s+recent|last|recent|earliest|first|previous|next)\s+meetings?\b", "'latest meeting' is a meeting phrase, not a performance 'latest'"),
     _r("M_DEAL_SIZE", MEETING, STRONG, r"\b(?:estimated\s+)?deal[\s-]*size(?:\s+estimates?)?\b", "deal_size_estimate is a meeting field; 'deal' here is not an investment deal"),
     _r("M_INVESTMENT_STAGE", MEETING, WEAK, r"\binvestment\s+stages?\b", "investment_stage is a meeting field"),
+    _r("P_LOB_METRIC", PERFORMANCE, STRONG, r"\b(?:private\s+equity|hedge\s+fund|real\s+estate|credit\s+opportunit(?:y|ies)|infrastructure)\s+"
+       r"(?:multiples?|moic|irr|returns?|aum)\b", "a canonical LOB name (A15) directly naming a performance metric is a strong performance signal, "
+       "unlike the bare word 'multiple'/'latest' alone"),
     _r("I_INVESTMENT_RECORDS", INVESTMENT, STRONG, r"\binvestment\s+records?\b"),
     _r("I_CLIENT_STATUS", INVESTMENT, STRONG, r"\bclient[\s_]*status\b", "ClientStatus is an investments field (A4)"),
     _r("P_PERFORMANCE_STATUS", PERFORMANCE, STRONG, r"\b(?:performance|investment)[\s_]+status\b", "Investment_Status_Name is a performance field"),

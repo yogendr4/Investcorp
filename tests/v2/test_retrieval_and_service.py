@@ -271,5 +271,40 @@ class TestV2Service(Base):
         self.assertEqual(self.engine.calls[0][1], "performance")
 
 
+class TestThreadSafety(Base):
+    def test_retriever_built_on_one_thread_is_usable_from_another(self):
+        """Regression: a sqlite3.Connection may only be used by the thread that created it. This
+        exercises both connections V2Retriever owns end-to-end: its own scope-reading `conn` and
+        the SemanticIndex's sentence-lookup connection (`sentence_text`, used to fill in
+        `semantic_sentence` for a genuinely semantic-only hit). Built on the main thread (like a
+        cached UI resource), it must still answer correctly, with no cross-thread
+        ProgrammingError, when called from a different thread."""
+        import threading
+
+        r = self.retriever()
+        q = "In client A12345's meetings, which mention a chief and providers?"
+        results: list = []
+        errors: list = []
+
+        def worker():
+            try:
+                results.append(self.ask(r, q, "chief providers"))
+            except Exception as exc:  # noqa: BLE001 - captured for assertion below, not swallowed
+                errors.append(exc)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join(timeout=10)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 1)
+        ev = results[0]
+        self.assertEqual((ev.outcome, ev.rank_method), (mr.OK, "rrf"))
+        top = ev.hits[0]
+        self.assertEqual((top.meeting_id, top.semantic_rank, top.semantic_sentence), (1, 1, CFO_SENT))
+        # the constructing (main) thread must still work afterwards, on its own connections
+        again = self.ask(r, q, "chief providers")
+        self.assertEqual(again.hits[0].semantic_sentence, CFO_SENT)
+
+
 if __name__ == "__main__":
     unittest.main()

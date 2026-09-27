@@ -44,6 +44,15 @@ _LEADING_STOPWORDS = {"what", "which", "who", "whom", "whose", "when", "where", 
                       "the", "for", "is", "are", "was", "were", "do", "does", "did", "can", "please", "me", "of", "in", "on", "and", "or", "with"}
 _PARTIAL_FORMS = ("deal_name", "account_rm", CTX_COMPANY, CTX_ATTENDEE)
 
+# Canonical LOB phrases (data_dictionary_DRAFT.md A15, confirmed by Abhishek; same fixed set as
+# structured_schema.py's cod_lob description). These are business-domain concepts, not entities:
+# a question naming one of them (for example "Private Equity multiple") must not be treated as a
+# deal_name mention just because the words happen to also appear inside a fictional deal name
+# (for example "Atlas Private Equity II"). Exact-phrase membership only, no fuzzy matching; a
+# capitalised run that names an actual deal (its full name, e.g. "Atlas Private Equity II") is
+# still caught earlier, by the whole-tuple exact-name match, before this set is even consulted.
+_LOB_PHRASES = frozenset({"private equity", "hedge fund", "real estate", "credit opportunity", "infrastructure"})
+
 
 def tokenize(text: str) -> list[str]:
     """Casefolded alphanumeric tokens; punctuation and underscores separate tokens."""
@@ -381,6 +390,9 @@ class EntityResolver:
             run = list(range(i, j))
             while run and fold[run[0]] in _LEADING_STOPWORDS:
                 run.pop(0)
+            if run and " ".join(fold[k] for k in run) in _LOB_PHRASES:
+                i = j
+                continue                                    # a canonical LOB phrase is a business concept, not an entity mention (A15)
             if run:
                 entries = self.index.partial([fold[k] for k in run])
                 if entries:

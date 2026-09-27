@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import threading
 import time
 import unicodedata
 from dataclasses import dataclass, field
@@ -135,17 +136,43 @@ def _match_expression(terms: list[str], phrases: list[str]) -> str:
 
 
 class MeetingRetriever:
+    """One SQLite connection per calling thread, opened lazily on first use (see
+    StructuredQueryEngine's docstring in structured_query.py for why: a sqlite3.Connection may
+    only be used by the thread that created it, and this object may be constructed on one thread
+    then called from others, e.g. a cached UI resource)."""
+
     def __init__(self, db_path: Path = DEFAULT_DB, top_k: int = DEFAULT_TOP_K) -> None:
-        db = Path(db_path)
-        if not db.is_file():
-            raise FileNotFoundError(f"Baseline database not found: {db} (build it with: python -m src.baseline.build_db)")
+        self._db = Path(db_path)
+        if not self._db.is_file():
+            raise FileNotFoundError(f"Baseline database not found: {self._db} (build it with: python -m src.baseline.build_db)")
         self.top_k = top_k
-        self.conn = sqlite3.connect(f"{db.resolve().as_uri()}?mode=ro", uri=True)
-        self.conn.execute("PRAGMA query_only = ON")
-        self.has_index = self.conn.execute("SELECT 1 FROM sqlite_master WHERE name = ?", (FTS_TABLE,)).fetchone() is not None
+        self._local = threading.local()
+
+    def _open(self) -> tuple[sqlite3.Connection, bool]:
+        conn = sqlite3.connect(f"{self._db.resolve().as_uri()}?mode=ro", uri=True)
+        conn.execute("PRAGMA query_only = ON")
+        has_index = conn.execute("SELECT 1 FROM sqlite_master WHERE name = ?", (FTS_TABLE,)).fetchone() is not None
+        return conn, has_index
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        if getattr(self._local, "conn", None) is None:
+            self._local.conn, self._local.has_index = self._open()
+        return self._local.conn
+
+    @property
+    def has_index(self) -> bool:
+        if getattr(self._local, "conn", None) is None:
+            self._local.conn, self._local.has_index = self._open()
+        return self._local.has_index
 
     def close(self) -> None:
-        self.conn.close()
+        """Closes this thread's connection only, if this thread ever opened one."""
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
+            self._local.has_index = None
 
     def __enter__(self):
         return self

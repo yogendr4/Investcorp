@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import threading
 import time
 import unicodedata
 from dataclasses import dataclass
@@ -120,18 +121,33 @@ def fuse_order(candidates: dict[int, dict], dates: dict[int, str]) -> list[int]:
 
 
 class V2Retriever:
+    """`self.lexical` (a MeetingRetriever) and `self.index` (a SemanticIndex) already open their
+    own SQLite connections lazily, one per calling thread (see their own docstrings/comments).
+    This class's own `conn` (used to read scope rows) does the same, for the same reason: this
+    object may be constructed on one thread (a cached UI resource) and called from others."""
+
     def __init__(self, db_path: Path = DEFAULT_DB, index_dir: Path = DEFAULT_INDEX_DIR, embedder: Any = None, top_k: int = mr.DEFAULT_TOP_K, *,
                  index: Optional[SemanticIndex] = None, verify_source: bool = True) -> None:
         self.db_path, self.top_k = Path(db_path), top_k
         self.lexical = mr.MeetingRetriever(self.db_path, top_k=top_k)
-        self.conn = sqlite3.connect(f"{self.db_path.resolve().as_uri()}?mode=ro", uri=True)
+        self._local = threading.local()
         self.embedder = embedder
         self.index = index or SemanticIndex.load(Path(index_dir), expected_fingerprint=source_fingerprint(self.db_path) if verify_source else None,
                                                  expected_config={"model": getattr(getattr(embedder, "config", None), "model", None)} if getattr(embedder, "config", None) else None)
 
+    @property
+    def conn(self) -> sqlite3.Connection:
+        if getattr(self._local, "conn", None) is None:
+            self._local.conn = sqlite3.connect(f"{self.db_path.resolve().as_uri()}?mode=ro", uri=True)
+        return self._local.conn
+
     def close(self) -> None:
+        """Closes this thread's connections only, if this thread ever opened one."""
         self.lexical.close()
-        self.conn.close()
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
         self.index.close()
 
     # ---- scope: the same WHERE the frozen retriever applied (read back from its evidence)

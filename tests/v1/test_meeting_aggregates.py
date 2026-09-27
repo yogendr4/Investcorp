@@ -210,5 +210,34 @@ class TestPipeline(Base):
             self.assertEqual((ev.outcome, adapter.prompts), (ma.UNSUPPORTED_QUESTION, []))
 
 
+class TestThreadSafety(Base):
+    def test_engine_built_on_one_thread_is_usable_from_another(self):
+        """Regression: a sqlite3.Connection may only be used by the thread that created it. This
+        mirrors the real bug: `cls.engine` was built in setUpClass (the test runner's main
+        thread) and must still answer correctly when called from a different thread, with no
+        cross-thread ProgrammingError, and existing DB safety (the guard) intact there too."""
+        import threading
+
+        results: list = []
+        errors: list = []
+
+        def worker():
+            try:
+                results.append(self.sql(f"SELECT COUNT(*) AS n FROM {V}"))
+                v = self.engine.guard.validate("SELECT * FROM meetings")   # the base table is never approved, only the view
+                self.assertFalse(v.ok)
+            except Exception as exc:  # noqa: BLE001 - captured for assertion below, not swallowed
+                errors.append(exc)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join(timeout=10)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].outcome, ma.OK)
+        # the main thread must still work afterwards, on its own connection
+        self.assertEqual(self.sql(f"SELECT COUNT(*) AS n FROM {V}").outcome, ma.OK)
+
+
 if __name__ == "__main__":
     unittest.main()

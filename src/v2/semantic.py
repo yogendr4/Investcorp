@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
@@ -30,9 +31,22 @@ class SemanticMatch:
 
 
 class SemanticIndex:
-    def __init__(self, directory: Path, manifest: dict, vectors: np.ndarray, offsets: dict[int, tuple[int, int]], sids: np.ndarray, poss: np.ndarray, conn: sqlite3.Connection) -> None:
+    """`sentence_text()` is called at answer time (one lookup per cited sentence), so its
+    connection is opened lazily, once per calling thread, the same way as MeetingRetriever and
+    StructuredQueryEngine (a sqlite3.Connection may only be used by the thread that created it,
+    and this index may be built once and then queried from several threads, e.g. a cached UI
+    resource). `load()`'s own validation connection is a short-lived local, closed before this
+    constructor ever runs, so it never needs this treatment."""
+
+    def __init__(self, directory: Path, manifest: dict, vectors: np.ndarray, offsets: dict[int, tuple[int, int]], sids: np.ndarray, poss: np.ndarray, sentence_db_path: Path) -> None:
         self.directory, self.manifest, self.vectors = directory, manifest, vectors
-        self._offsets, self._sids, self._poss, self._conn = offsets, sids, poss, conn
+        self._offsets, self._sids, self._poss, self._sentence_db_path = offsets, sids, poss, sentence_db_path
+        self._local = threading.local()
+
+    def _conn(self) -> sqlite3.Connection:
+        if getattr(self._local, "conn", None) is None:
+            self._local.conn = sqlite3.connect(f"{self._sentence_db_path.resolve().as_uri()}?mode=ro", uri=True)
+        return self._local.conn
 
     @property
     def dimensions(self) -> int:
@@ -73,13 +87,16 @@ class SemanticIndex:
         if (norms == 0).any():
             raise IndexError_("the vector file contains a zero vector")
         vectors = vectors / norms                                  # cosine similarity == dot product
-        conn = sqlite3.connect(f"{spath.resolve().as_uri()}?mode=ro", uri=True)
-        count = conn.execute("SELECT COUNT(*) FROM sentences").fetchone()[0]
-        if count != n or m["counts"]["sentences"] != n:
-            raise IndexError_(f"the sentence table has {count} rows, the vectors {n}")
-        rows = conn.execute("SELECT meeting_id, pos, sentence_id FROM meeting_sentences ORDER BY meeting_id, pos").fetchall()
-        if rows and max(r[2] for r in rows) >= n:
-            raise IndexError_("a meeting refers to a sentence id without a vector")
+        conn = sqlite3.connect(f"{spath.resolve().as_uri()}?mode=ro", uri=True)     # scratch connection: used only for this validation, closed below
+        try:
+            count = conn.execute("SELECT COUNT(*) FROM sentences").fetchone()[0]
+            if count != n or m["counts"]["sentences"] != n:
+                raise IndexError_(f"the sentence table has {count} rows, the vectors {n}")
+            rows = conn.execute("SELECT meeting_id, pos, sentence_id FROM meeting_sentences ORDER BY meeting_id, pos").fetchall()
+            if rows and max(r[2] for r in rows) >= n:
+                raise IndexError_("a meeting refers to a sentence id without a vector")
+        finally:
+            conn.close()
         mids = np.fromiter((r[0] for r in rows), dtype=np.int64, count=len(rows))
         sids = np.fromiter((r[2] for r in rows), dtype=np.int64, count=len(rows))
         poss = np.fromiter((r[1] for r in rows), dtype=np.int64, count=len(rows))
@@ -89,13 +106,17 @@ class SemanticIndex:
             starts = np.concatenate(([0], bounds))
             ends = np.concatenate((bounds, [len(rows)]))
             offsets = {int(mids[s]): (int(s), int(e)) for s, e in zip(starts, ends)}
-        return cls(d, m, vectors, offsets, sids, poss, conn)
+        return cls(d, m, vectors, offsets, sids, poss, spath)
 
     def close(self) -> None:
-        self._conn.close()
+        """Closes this thread's sentence-lookup connection only, if this thread ever opened one."""
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
 
     def sentence_text(self, sentence_id: int) -> str:
-        row = self._conn.execute("SELECT text FROM sentences WHERE sentence_id = ?", (int(sentence_id),)).fetchone()
+        row = self._conn().execute("SELECT text FROM sentences WHERE sentence_id = ?", (int(sentence_id),)).fetchone()
         if row is None:
             raise IndexError_(f"unknown sentence id {sentence_id}")
         return row[0]

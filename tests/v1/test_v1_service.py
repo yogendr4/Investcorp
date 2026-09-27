@@ -440,8 +440,8 @@ class TestBaselineIsFrozen(unittest.TestCase):
     """The historical git tag `baseline-v0.1` and the current, dictionary-aligned working tree are two distinct
     reference points; see docs/architecture/baseline_reference.md. Both are guarded here:
       - the TAG itself (its object and the commit it points to) must never move, be re-created or be force-pushed;
-      - the working tree may differ from it ONLY in the explicitly approved dictionary-alignment files below
-        (data_dictionary_DRAFT.md decisions 1/2/3/5/7/8, A15-A18) — any OTHER Baseline file drifting is still a failure.
+      - the working tree may differ from it ONLY in the explicitly approved files below — any OTHER Baseline file
+        drifting is still a failure.
     """
 
     # The tag's own object SHA and the commit it points to (`git rev-parse baseline-v0.1` / `baseline-v0.1^{commit}`),
@@ -457,6 +457,21 @@ class TestBaselineIsFrozen(unittest.TestCase):
         "src/baseline/data_schema.py", "src/baseline/data_validation.py", "src/baseline/structured_schema.py",
         "tests/baseline/test_data_layer.py", "tests/baseline/test_structured_query.py",
     }
+
+    # Files approved for the post-submission-v1.0 corrective bugfix patch: Issue 1 (canonical LOB phrases such
+    # as "Private Equity" were wrongly surfaced as ambiguous deal_name entity mentions, entity_resolution.py;
+    # and, found afterward, the same LOB-metric phrasing was only a weak performance routing signal, so a
+    # question combining it with a strong meeting phrase routed meeting-only instead of hybrid,
+    # question_routing.py) and Issue 2 (SQLite connections opened once in __init__ and reused across threads;
+    # made lazy and thread-local in structured_query.py and meeting_retrieval.py — see their own docstrings).
+    _ISSUE_1_2_BUGFIX_FILES = {
+        "src/baseline/entity_resolution.py", "src/baseline/meeting_retrieval.py",
+        "src/baseline/question_routing.py", "src/baseline/structured_query.py",
+        "tests/baseline/test_baseline_service.py", "tests/baseline/test_entity_resolution.py",
+        "tests/baseline/test_meeting_retrieval.py", "tests/baseline/test_question_routing.py",
+        # tests/baseline/test_structured_query.py already listed in _DICTIONARY_ALIGNMENT_FILES; also touched here.
+    }
+    _APPROVED_DRIFT = _DICTIONARY_ALIGNMENT_FILES | _ISSUE_1_2_BUGFIX_FILES
 
     def _git(self, *args):
         try:
@@ -478,7 +493,7 @@ class TestBaselineIsFrozen(unittest.TestCase):
             self.skipTest("tag baseline-v0.1 not found")
         diff = self._git("diff", "--name-only", "baseline-v0.1", "--", "src/baseline", "tests/baseline", "tests/evaluation/questions.json")
         changed = {line for line in diff.stdout.strip().splitlines() if line}
-        unapproved = changed - self._DICTIONARY_ALIGNMENT_FILES
+        unapproved = changed - self._APPROVED_DRIFT
         self.assertEqual(unapproved, set(), f"Baseline files differ from the frozen tag outside the approved dictionary-alignment set: {sorted(unapproved)}")
 
 

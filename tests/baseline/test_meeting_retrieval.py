@@ -257,6 +257,35 @@ class TestEmptyAndWeakResults(Base):
             mr.MeetingRetriever(self.tmp / "missing.sqlite")
 
 
+class TestThreadSafety(Base):
+    def test_retriever_built_on_one_thread_is_usable_from_another(self):
+        """Regression: a sqlite3.Connection may only be used by the thread that created it. This
+        mirrors the real bug: `cls.r` was built in setUpClass (the test runner's main thread) and
+        must still answer correctly when called from a different thread, with no cross-thread
+        ProgrammingError, and existing DB safety (read-only PRAGMA) intact on that other thread."""
+        import threading
+
+        results: list = []
+        errors: list = []
+
+        def worker():
+            try:
+                results.append(self.ask("What concerns were raised in client A12345's meetings?"))
+                with self.assertRaises(sqlite3.Error):
+                    self.r.conn.execute("DELETE FROM meetings")
+            except Exception as exc:  # noqa: BLE001 - captured for assertion below, not swallowed
+                errors.append(exc)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join(timeout=10)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual((results[0].outcome, set(self.ids(results[0]))), (mr.OK, {1}))
+        # the main thread must still work afterwards, on its own connection
+        self.assertEqual(set(self.ids(self.ask("What concerns were raised in client A12345's meetings?"))), {1})
+
+
 class TestQueryDerivation(unittest.TestCase):
     def test_terms_exclude_stopwords_intent_words_and_dates(self):
         d = mr.derive_query("What concerns were discussed in the meeting on 2022-10-01 about hedging?")

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -116,21 +117,53 @@ Rules:
 
 
 class MeetingAggregateEngine:
+    """Same lazy, per-thread connection pattern as StructuredQueryEngine (see its docstring):
+    `VIEW_DDL` creates a TEMP VIEW, which SQLite scopes to the connection that created it, so each
+    thread's connection must run it independently. `vocab` is static reference data (distinct
+    sector/region/stage/company values), computed once at construction from a short-lived scratch
+    connection, not tied to whichever thread happens to serve the first request."""
+
     def __init__(self, config: AggregateConfig = AggregateConfig(), adapter: Any = None) -> None:
         self.config = config
         self._adapter = adapter
-        db = Path(config.db_path)
-        if not db.is_file():
-            raise FileNotFoundError(f"Baseline database not found: {db} (build it with: python -m src.baseline.build_db)")
-        self.conn = sqlite3.connect(f"{db.resolve().as_uri()}?mode=ro", uri=True)
-        self.conn.execute(VIEW_DDL)
-        self.vocab = {col: [r[0] for r in self.conn.execute(f"SELECT DISTINCT {col} FROM {VIEW} WHERE {col} IS NOT NULL ORDER BY 1")] for col in ("sector", "region", "stage", "company")}
-        self.conn.execute("PRAGMA query_only = ON")
-        self.guard = SqlGuard(self.conn, {VIEW: set(VIEW_COLUMNS)}, {VIEW})     # only the view and its ten columns are approved; no base table
-        self.guard.install()
+        self._db = Path(config.db_path)
+        if not self._db.is_file():
+            raise FileNotFoundError(f"Baseline database not found: {self._db} (build it with: python -m src.baseline.build_db)")
+        self._local = threading.local()
+        scratch = sqlite3.connect(f"{self._db.resolve().as_uri()}?mode=ro", uri=True)
+        try:
+            scratch.execute(VIEW_DDL)
+            self.vocab = {col: [r[0] for r in scratch.execute(f"SELECT DISTINCT {col} FROM {VIEW} WHERE {col} IS NOT NULL ORDER BY 1")] for col in ("sector", "region", "stage", "company")}
+        finally:
+            scratch.close()
+
+    def _open(self) -> tuple[sqlite3.Connection, SqlGuard]:
+        conn = sqlite3.connect(f"{self._db.resolve().as_uri()}?mode=ro", uri=True)
+        conn.execute(VIEW_DDL)
+        conn.execute("PRAGMA query_only = ON")
+        guard = SqlGuard(conn, {VIEW: set(VIEW_COLUMNS)}, {VIEW})     # only the view and its ten columns are approved; no base table
+        guard.install()
+        return conn, guard
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        if getattr(self._local, "conn", None) is None:
+            self._local.conn, self._local.guard = self._open()
+        return self._local.conn
+
+    @property
+    def guard(self) -> SqlGuard:
+        if getattr(self._local, "guard", None) is None:
+            self._local.conn, self._local.guard = self._open()
+        return self._local.guard
 
     def close(self) -> None:
-        self.conn.close()
+        """Closes this thread's connection only, if this thread ever opened one."""
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
+            self._local.guard = None
 
     @property
     def adapter(self):
