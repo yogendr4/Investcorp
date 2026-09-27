@@ -1,6 +1,6 @@
 # Data Dictionary — DRAFT (Baseline 0.1 source of truth)
 
-Status: DRAFT, revised after review. Not yet approved as final. Source: `data/Assignment_Data.xlsx`, profiled 2026-09-26. No data was modified.
+Status: DRAFT in name only — this is the actively used, authoritative source of data facts and assumptions for the whole implementation (baseline through V2.1), including the official `Assignment_Data_Dictionary.xlsx` reconciliation and Abhishek's clarifications (A15-A18, decisions 1-8). Source: `data/Assignment_Data.xlsx`, profiled 2026-09-26. No data was modified.
 
 **Reconciled against the official dictionary** `data/Assignment_Data_Dictionary.xlsx` (arrived 2026-09-27; now the primary semantic source). Every column the official dictionary describes with a stated business meaning is cross-checked against this document's own FACT observations below (Sections 1, 7, 9, 11). Where the two disagree, the disagreement is recorded as a data-quality inconsistency (never silently reconciled) or, for the LOB code families, as an explicit application-level assumption (A15). This document's own profiling (FACT/INFERENCE) is not replaced by the official dictionary; the two are cross-referenced.
 

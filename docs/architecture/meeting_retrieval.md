@@ -77,7 +77,7 @@ Text is indexed, matched and returned exactly as stored, mojibake included. No r
 - **OR of terms.** Extra generic words in a question (for example `position`) add noise. There is no stemming, so `raised` does not match `raise`.
 - **Filters are limited to** client, group and an exact ISO date, plus explicit date-range parameters. Sector, region, stage and company filters, and year or range phrases in a question, are not parsed.
 - **Meetings have no RM link and no deal field.** RM-to-meeting questions are unsupported; deal names in text are text only.
-- **Group membership** comes from the meetings source only (metadata question 4 stays open).
+- **Group membership** comes from the meetings source only. Where investments/performance group membership differs from meetings for the same group id, membership is treated as source-specific and neither source overrides the other (confirmed by Abhishek, `data_dictionary_DRAFT.md` decision 8; no code path merges the two).
 - **Term detection depends on the resolver:** an ambiguous mention that involves a real entity type stops the search even when the user meant the word.
 - **Latency:** about 140-220 ms per query on the full index.
 

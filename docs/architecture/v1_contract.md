@@ -1,6 +1,6 @@
 # V1 Implementation Contract (v0.2)
 
-Status: **approved and implemented in `src/v1/` (not yet measured on the benchmark).** Version 0.2 synchronizes this contract with the implemented behavior, without changing V1 behavior; the synchronized points are listed in section 11. This contract is derived strictly from the approved [`docs/evaluation/v1_diagnosis.md`](../evaluation/v1_diagnosis.md), with the two approved changes and the exclusions you stated. It extends [`baseline_contract.md`](baseline_contract.md); where they differ, section 9 lists the point and asks for a decision.
+Status: **approved, implemented in `src/v1/`, and measured on the 40-question visible benchmark** ([`v1_results.*`](../evaluation/v1_results.md): 24 correct / 5 incorrect / 11 needs-review). Superseded by [`v2_semantic_retrieval.md`](v2_semantic_retrieval.md) and [`v2_1_evidence_selection.md`](v2_1_evidence_selection.md). Version 0.2 synchronizes this contract with the implemented behavior, without changing V1 behavior; the synchronized points are listed in section 11. This contract is derived strictly from the approved [`docs/evaluation/v1_diagnosis.md`](../evaluation/v1_diagnosis.md), with the two approved changes and the exclusions you stated. It extends [`baseline_contract.md`](baseline_contract.md); where they differ, section 9 lists the point and asks for a decision.
 
 ## 0. Sources and precedence
 

@@ -1,6 +1,6 @@
 # Baseline Implementation Contract (v0.1)
 
-Status: DRAFT for approval. Specification only. No code, tables, indexes or dependencies exist yet.
+Status: **Approved and implemented.** This contract was implemented as `src/baseline/`, measured on the 40-question visible benchmark ([`baseline_results.*`](../evaluation/baseline_results.md)), and frozen at git tag `baseline-v0.1`. It was subsequently updated in place (dictionary alignment + Abhishek's reconciliation, no benchmark or architecture change) and re-frozen at `baseline-v0.2`; see [`baseline_reference.md`](baseline_reference.md) for the historical-vs-current distinction. Superseded by [`v1_contract.md`](v1_contract.md), [`v2_semantic_retrieval.md`](v2_semantic_retrieval.md) and [`v2_1_evidence_selection.md`](v2_1_evidence_selection.md) for later behavior; this document remains the base layer all of them extend.
 
 ## 0. Sources of truth and precedence
 

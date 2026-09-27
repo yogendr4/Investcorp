@@ -2,6 +2,8 @@
 
 `scripts/evaluation/visible_v21.py` is the new, reproducible procedure for the 40 questions in `tests/evaluation/questions.json`. It is intentionally separate from the recorded historical V2.1 measurement in `v21_results.json` / `v21_results.md`: the historical executable runner and scorer were not recoverable.
 
+**This harness has not itself produced a fresh, complete benchmark run.** A run was attempted after the `baseline-v0.2` freeze; the real Claude CLI execution stalled partway through and did not finish, so no new run artifact exists under `docs/evaluation/runs/`. The historical V2.1 result (24 correct / 5 incorrect / 11 needs-review, `v21_results.md`) remains the only completed measurement on the 40 visible questions; it should not be read as having been reproduced by this harness, only as the prior, independently-recorded result this harness is designed to be re-run against once execution succeeds.
+
 ## Run
 
 From the repository root, after the required Claude CLI and Vertex credentials are already configured:
