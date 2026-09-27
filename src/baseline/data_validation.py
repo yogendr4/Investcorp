@@ -43,6 +43,19 @@ class Expected:
         ("investments", "deal_id"): 8, ("investments", "deal_name"): 9, ("investments", "account_rm"): 5,
         ("investments", "client_status"): 4, ("investments", "natural_currency_code"): 6,
     })
+    # Known data-quality inconsistencies against the official data dictionary (Assignment_Data_Dictionary.xlsx),
+    # decisions 2, 5, 7, 8 in docs/metadata/data_dictionary_DRAFT.md. Frozen as facts about this synthetic
+    # dataset, never reconciled: the build fails only if one of these counts DRIFTS, not because the values are
+    # themselves "wrong". See baseline_contract.md A1/A13/A16-A18.
+    # (Decision 1, performance First_*/Last_*_Investment_Date vs. each other, is intentionally NOT checked here:
+    # per Abhishek's clarification these columns are not usable application facts at all and are excluded from
+    # the SQL-generation schema (structured_schema.py); there is nothing left to freeze as an app-relevant fact.)
+    client_last_met_after_as_of: int = 832                # decision 2
+    client_last_met_meeting_mismatch: int = 1_536          # decision 2 (all 1,536 client performance rows)
+    total_aum_lob_sum_mismatch: int = 1_632                # decision 5 (all 1,632 rows with a Total_AUM value)
+    id_capital_call_values: frozenset = frozenset({0, 1})  # decision 7
+    group_membership_common: int = 96                      # decision 8
+    group_membership_differs: int = 64                     # decision 8
 
 
 @dataclass(frozen=True)
@@ -183,6 +196,29 @@ def run_checks(conn: sqlite3.Connection, roundtrip: Optional[dict[str, list[tupl
         eq(f"{table}.{col}: range", tuple(conn.execute(f"SELECT MIN({col}), MAX({col}) FROM {table}").fetchone()), (lo, hi))
     for (table, col), n in expected.distinct.items():
         eq(f"{table}.{col}: distinct values", _one(conn, f"SELECT COUNT(DISTINCT {col}) FROM {table}"), n)
+
+    # -- known data-quality inconsistencies vs. the official dictionary (documented, never reconciled: decisions 2, 5, 7, 8)
+    eq("performance: client_last_met_date > as_of_date (dictionary says most-recent meeting; not reconciled)",
+       _one(conn, "SELECT COUNT(*) FROM performance WHERE client_last_met_date IS NOT NULL AND as_of_date IS NOT NULL AND client_last_met_date > as_of_date"),
+       expected.client_last_met_after_as_of)
+    eq("performance: client_last_met_date disagrees with MAX(meetings.meeting_date) for the same client (not reconciled; meetings.meeting_date is the last-met source, A13)",
+       _one(conn, """SELECT COUNT(*) FROM (SELECT p.client_id, p.client_last_met_date,
+                       (SELECT MAX(m.meeting_date) FROM meetings m WHERE m.client_id = p.client_id) AS latest_meeting
+                     FROM performance p WHERE p.client_id IS NOT NULL AND p.client_last_met_date IS NOT NULL)
+                     WHERE latest_meeting IS NOT NULL AND client_last_met_date <> latest_meeting"""),
+       expected.client_last_met_meeting_mismatch)
+    eq("performance: total_aum_amount never equals the sum of the LOB *_aum_amount fields (dictionary says 'total across LOBs'; non-additive, not reconciled)",
+       _one(conn, """SELECT COUNT(*) FROM performance WHERE total_aum_amount IS NOT NULL AND ABS(total_aum_amount -
+                       (COALESCE(ci_aum_amount,0)+COALESCE(hf_aum_amount,0)+COALESCE(re_aum_amount,0)+COALESCE(mena_aum_amount,0)+COALESCE(tech_aum_amount,0)+COALESCE(pref_shares_aum_amount,0))) > 0.01"""),
+       expected.total_aum_lob_sum_mismatch)
+    eq("investments.id_capital_call: observed values (dictionary describes a per-deal capital-call identifier; observed is a 0/1 flag)",
+       _set(conn, "SELECT DISTINCT id_capital_call FROM investments"), set(expected.id_capital_call_values))
+    common_groups = ig & mg
+    differ = sum(1 for g in common_groups
+                if {r[0] for r in conn.execute("SELECT DISTINCT client_id FROM investments WHERE group_id = ?", (g,))} !=
+                   {r[0] for r in conn.execute("SELECT DISTINCT client_id FROM meetings WHERE group_id = ?", (g,))})
+    eq("group membership: common group ids between investments and meetings", len(common_groups), expected.group_membership_common)
+    eq("group membership: group ids where client membership differs across sources (not reconciled, source-specific)", differ, expected.group_membership_differs)
 
     # -- traceability tables
     eq("lineage table populated", _one(conn, "SELECT COUNT(DISTINCT table_name) FROM _column_lineage"), len(TABLE_SPECS))

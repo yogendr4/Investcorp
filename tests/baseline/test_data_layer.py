@@ -222,6 +222,71 @@ class TestRealBuild(unittest.TestCase):
         with closing(self.connect()) as conn:
             self.assertEqual(conn.execute("SELECT COUNT(*) FROM meetings WHERE action_items IS NULL").fetchone()[0], 5_008)
 
+    # ---- data_dictionary_DRAFT.md decisions 1, 2, 5, 7, 8 (official dictionary reconciliation): the raw values
+    # are never reconciled or "fixed"; these facts are frozen so a future change that starts reconciling them
+    # (or that changes the data) is caught, named individually rather than only through the generic checks gate.
+    def test_first_after_last_performance_investment_dates_are_ignored_by_the_application(self):
+        """Decision 1 (Abhishek's clarification, supersedes the earlier "preserve as contradictory" framing):
+        performance First_*/Last_*_Investment_Date are not usable application facts and are not derived from or
+        reconciled with anything. The raw columns are still physically stored (never deleted), just excluded
+        from the approved SQL-generation schema."""
+        with closing(self.connect()) as conn:
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(performance)")}
+            for fam in ("ci", "re", "hf"):
+                self.assertIn(f"first_{fam}_investment_date", cols)
+                self.assertIn(f"last_{fam}_investment_date", cols)
+        # ...but the approved SQL-generation schema excludes them: no query route may use them as facts.
+        from src.baseline.structured_schema import performance_columns
+        for fam in ("ci", "re", "hf"):
+            self.assertNotIn(f"first_{fam}_investment_date", performance_columns())
+            self.assertNotIn(f"last_{fam}_investment_date", performance_columns())
+
+    def test_client_last_met_date_is_not_reconciled_with_meetings_or_as_of_date(self):
+        """Decision 2: performance.client_last_met_date is preserved raw; meetings.meeting_date remains the
+        source used for 'last met' questions (A13); the two are never silently merged."""
+        with closing(self.connect()) as conn:
+            after_as_of = conn.execute("SELECT COUNT(*) FROM performance WHERE client_last_met_date IS NOT NULL AND as_of_date IS NOT NULL "
+                                       "AND client_last_met_date > as_of_date").fetchone()[0]
+            self.assertEqual(after_as_of, 832)
+            mismatch = conn.execute("""SELECT COUNT(*) FROM (SELECT p.client_id, p.client_last_met_date,
+                (SELECT MAX(m.meeting_date) FROM meetings m WHERE m.client_id = p.client_id) AS latest_meeting
+                FROM performance p WHERE p.client_id IS NOT NULL AND p.client_last_met_date IS NOT NULL)
+                WHERE latest_meeting IS NOT NULL AND client_last_met_date <> latest_meeting""").fetchone()[0]
+            self.assertEqual(mismatch, 1_536)   # every client performance row
+            # the field the SQL-generation LLM can query for "last met" never includes client_last_met_date
+            from src.baseline.structured_schema import performance_columns
+            self.assertNotIn("client_last_met_date", performance_columns())
+
+    def test_total_aum_is_never_derived_from_or_equal_to_the_lob_sum(self):
+        """Decision 5: total_aum_amount is preserved as given; it is never replaced by, or checked against, the
+        sum of the LOB *_aum_amount fields."""
+        with closing(self.connect()) as conn:
+            mismatch = conn.execute("""SELECT COUNT(*) FROM performance WHERE total_aum_amount IS NOT NULL AND ABS(total_aum_amount -
+                (COALESCE(ci_aum_amount,0)+COALESCE(hf_aum_amount,0)+COALESCE(re_aum_amount,0)+COALESCE(mena_aum_amount,0)+COALESCE(tech_aum_amount,0)+COALESCE(pref_shares_aum_amount,0))) > 0.01""").fetchone()[0]
+            self.assertEqual(mismatch, 1_632)   # every row with a value
+
+    def test_id_capital_call_is_a_flag_not_an_identifier(self):
+        """Decision 7: the dictionary calls this a capital-call identifier; observed values are only 0/1."""
+        with closing(self.connect()) as conn:
+            values = {r[0] for r in conn.execute("SELECT DISTINCT id_capital_call FROM investments")}
+        self.assertEqual(values, {0, 1})
+
+    def test_group_membership_differs_by_source_and_neither_overrides_the_other(self):
+        """Decision 8: for the group ids common to investments and meetings, membership can differ; investments
+        is never overwritten by meetings' membership or vice versa (source-specific, per data_dictionary_DRAFT.md
+        decision 8 and structured_schema/entity_resolution's own group handling)."""
+        with closing(self.connect()) as conn:
+            inv_groups = {r[0] for r in conn.execute("SELECT DISTINCT group_id FROM investments WHERE group_id IS NOT NULL")}
+            meet_groups = {r[0] for r in conn.execute("SELECT DISTINCT group_id FROM meetings WHERE group_id IS NOT NULL")}
+            common = inv_groups & meet_groups
+            self.assertEqual(len(common), 96)
+            differ = 0
+            for g in common:
+                inv_members = {r[0] for r in conn.execute("SELECT DISTINCT client_id FROM investments WHERE group_id = ?", (g,))}
+                meet_members = {r[0] for r in conn.execute("SELECT DISTINCT client_id FROM meetings WHERE group_id = ?", (g,))}
+                differ += inv_members != meet_members
+            self.assertEqual(differ, 64)
+
     def test_moic_and_deal_size_derivation(self):
         with closing(self.connect()) as conn:
             row = conn.execute("SELECT ci_current_moic, ci_current_moic_num, ci_current_moic_parse_status FROM performance WHERE client_id='A12345' AND as_of_date='2024-10-25'").fetchone()

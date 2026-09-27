@@ -348,18 +348,138 @@ class TestValidationWrapper(unittest.TestCase):
             a, b = validate_answer(ans, "meeting", None, ev, "q"), validate_answer_v1(ans, "meeting", None, ev, None, "q")
             self.assertEqual((a.valid, a.reasons, a.warnings), (b.valid, b.reasons, b.warnings), ans)
 
+    # ---- payload_audit_v21.md fixes 1 and 2 (regression tests) ----
+
+    def test_hyb10_both_sides_row_counts_are_independently_groundable_not_summed(self):
+        """Regression test for payload_audit_v21.md fix 1 (HYB-10): a hybrid answer must be able to cite EITHER
+        side's own row count (8 deal names, 16 meeting sector/company rows) without the wrapper collapsing them
+        into one synthetic 24."""
+        s = s_ev(rows=(("Atlas Private Equity II",), ("BluePeak Venture II",), ("BluePeak Venture III",), ("Emerald Real Estate Fund",),
+                      ("NorthBridge Growth Fund",), ("Orion Infrastructure I",), ("Orion Infrastructure IV",), ("Summit Credit Opportunities",)), columns=("deal_name",), source="investments", route="investment")
+        a = self.agg([("agritech", "Redwood Partners"), ("consumer goods", "Harbor Fund"), ("consumer goods", "Summit Advisors"), ("edtech", "Quantum Growth"),
+                      ("education", "Crescent Capital"), ("education", "NorthStar FO"), ("fintech", "Astra Investments"), ("fintech", "Harbor Fund"),
+                      ("healthcare", "Pioneer LP"), ("logistics", "Astra Investments"), ("logistics", "Redwood Partners"), ("media", "GreenField Ventures"),
+                      ("media", "Helix Capital"), ("media", "NorthStar FO"), ("real estate", "IVC Capital"), ("renewables", "Redwood Partners")], ("sector", "company"))
+        self.assertEqual((s.row_count, a.row_count), (8, 16))                # the two real, independent counts this audit is about
+        deal_names = "Atlas Private Equity II, BluePeak Venture II, BluePeak Venture III, Emerald Real Estate Fund, NorthBridge Growth Fund, Orion Infrastructure I, Orion Infrastructure IV, Summit Credit Opportunities"
+        ans = f"Client D12376 has 8 investment records with these deal names: {deal_names} [investments]. Its meetings cover 16 sector/company rows [meetings]."
+        r = validate_answer_v1(ans, "hybrid", s, None, a, "q")
+        self.assertTrue(r.valid, r.reasons)
+        # 16 alone (the aggregate's own row_count) must ground even without also mentioning 8 or 24
+        self.assertTrue(validate_answer_v1(f"{deal_names} appear on investment records [investments]. There are 16 sector/company rows [meetings].", "hybrid", s, None, a, "q").valid)
+        # 8 alone (the structured side's own row_count) must ground even without also mentioning 16 or 24
+        self.assertTrue(validate_answer_v1(f"There are 8 deal names: {deal_names} [investments]. The meetings evidence lists sector/company pairs [meetings].", "hybrid", s, None, a, "q").valid)
+        # a wrong number for either side is still rejected: the fix adds grounding, it does not accept anything
+        self.assertFalse(validate_answer_v1(f"{deal_names} appear on investment records [investments]. There are 17 sector/company rows [meetings].", "hybrid", s, None, a, "q").valid)
+        self.assertFalse(validate_answer_v1(f"There are 23 deal names: {deal_names} [investments]. The meetings evidence lists sector/company pairs [meetings].", "hybrid", s, None, a, "q").valid)
+
+    def test_no_cross_source_count_summation(self):
+        """The wrapper never fabricates row_count = side_a + side_b as the represented count of either side."""
+        s = s_ev(rows=tuple((f"deal{i}",) for i in range(8)), columns=("deal_name",), source="investments", route="investment")
+        a = self.agg([(f"s{i}", f"c{i}") for i in range(16)], ("sector", "company"))
+        # 24 (the naive sum) is not required for a correct answer to validate: both real numbers ground it on their own
+        self.assertTrue(validate_answer_v1("8 deal names [investments]. 16 sector/company rows [meetings].", "hybrid", s, None, a, "q").valid)
+        # a number that is neither side's real count, nor their sum, nor a note, still fails (no weakening)
+        self.assertFalse(validate_answer_v1("8 deal names [investments]. 99 sector/company rows [meetings].", "hybrid", s, None, a, "q").valid)
+
+    def test_meet06_note_contained_number_is_groundable(self):
+        """Regression test for payload_audit_v21.md fix 2 (MEET-06): a number that exists only inside the
+        retriever's own note text (already shown to the model verbatim) must be groundable."""
+        ev = mr.MeetingEvidence("q", mr.OK, hits=(hit(17056, "2023-05-19"),), filtered_meeting_count=20000, matched_count=627, rank_method="rrf",
+                                query={"terms": ["sanjay", "lópez"], "phrases": []}, filters={"client_ids": []},
+                                notes=("627 meetings matched; only the top 50 are returned",))
+        ans = "Missing: the remaining matches (only the top 50 of 627 are returned) [meeting: 17056, 2023-05-19]."
+        self.assertTrue(validate_answer_v1(ans, "meeting", None, ev, None, "q").valid)
+        # an unrelated number that is in neither a row/hit field nor a note must still fail: notes do not open the
+        # door to arbitrary free-text numbers, only to the two specific fields synthesis already renders verbatim
+        bad = "Missing: the remaining matches (only the top 12345 of 627 are returned) [meeting: 17056, 2023-05-19]."
+        self.assertFalse(validate_answer_v1(bad, "meeting", None, ev, None, "q").valid)
+
+    def test_entity_notes_numbers_are_also_groundable(self):
+        ev = mr.MeetingEvidence("q", mr.OK, hits=(hit(1, "2024-01-10"),), filtered_meeting_count=5, matched_count=1, rank_method="bm25",
+                                query={"terms": ["x"], "phrases": []}, filters={"group_id": 346}, entity_notes=("group 346 has 6 members in the meetings source",))
+        ans = "Group 346 has 6 members in the meetings source [meeting: 1, 2024-01-10]."
+        self.assertTrue(validate_answer_v1(ans, "meeting", None, ev, None, "q").valid)
+
+
+class TestFusedUnmatchedCount(unittest.TestCase):
+    """payload_audit_v21.md fix 3: the unmatched-meeting count must be deterministic in fused (rrf) mode too,
+    not only in lexical (bm25) mode, and the model must not have to derive `scope - matched` itself."""
+
+    def ev(self, rank_method, scope=23, matched=6):
+        return mr.MeetingEvidence("q", mr.OK, hits=(hit(1, "2024-01-10"),), filtered_meeting_count=scope, matched_count=matched, rank_method=rank_method,
+                                  query={"terms": ["x"], "phrases": []}, filters={"client_ids": ["A12346"]})
+
+    def test_unmatched_count_is_available_for_rrf_not_only_bm25(self):
+        from src.v1.synthesis import unmatched_count
+        self.assertEqual(unmatched_count(self.ev("rrf")), 17)                # MEET-07: 23 in scope, 6 matched
+        self.assertEqual(unmatched_count(self.ev("bm25")), 17)               # unchanged lexical-mode behavior
+        self.assertIsNone(unmatched_count(self.ev("date_desc")))             # a listing has no text match concept
+
+    def test_the_count_is_exposed_in_the_evidence_text_shown_to_synthesis(self):
+        from src.v1.synthesis import _meeting_lines
+        lines = _meeting_lines(self.ev("rrf"), n_hits=1, fields=())
+        self.assertIn("in scope without a text match: 17", lines[0])
+
+    def test_meet07_style_answer_is_now_groundable_without_the_model_deriving_it(self):
+        from src.v1.synthesis import unmatched_count
+        ev = self.ev("rrf")
+        ans = "Six meetings match. The evidence does not say whether the remaining 17 meetings mention independent directors [meeting: 1, 2024-01-10]."
+        # src/v1/service.py always threads unmatched_count(...) into extra_numbers, unconditionally of rank_method;
+        # this reproduces that wiring directly against the fixed, mode-independent unmatched_count (fix 3).
+        self.assertTrue(validate_answer_v1(ans, "meeting", None, ev, None, "q", extra_numbers=[unmatched_count(ev)]).valid)
+
+    def test_existing_bm25_behavior_is_unchanged(self):
+        from src.v1.synthesis import unmatched_count
+        ev = self.ev("bm25")
+        self.assertTrue(validate_answer_v1("Six match and 17 others in scope do not [meeting: 1, 2024-01-10].", "meeting", None, ev, None, "q",
+                                           extra_numbers=[unmatched_count(ev)]).valid)
+
 
 class TestBaselineIsFrozen(unittest.TestCase):
-    def test_baseline_files_match_the_tag(self):
+    """The historical git tag `baseline-v0.1` and the current, dictionary-aligned working tree are two distinct
+    reference points; see docs/architecture/baseline_reference.md. Both are guarded here:
+      - the TAG itself (its object and the commit it points to) must never move, be re-created or be force-pushed;
+      - the working tree may differ from it ONLY in the explicitly approved dictionary-alignment files below
+        (data_dictionary_DRAFT.md decisions 1/2/3/5/7/8, A15-A18) — any OTHER Baseline file drifting is still a failure.
+    """
+
+    # The tag's own object SHA and the commit it points to (`git rev-parse baseline-v0.1` / `baseline-v0.1^{commit}`),
+    # recorded when the tag was created. If either changes, the tag was moved, deleted-and-recreated, or the
+    # commit it points to was rewritten: baseline-v0.1 is no longer immutable.
+    _TAG_OBJECT = "36b85f87d06d7d776e001a90c2d05b608920a9aa"
+    _TAG_COMMIT = "3ee53fb1efa82af8fc8e53ed7ef73811e019f4f5"
+
+    # Files where the current, dictionary-aligned Baseline is explicitly approved to differ from baseline-v0.1.
+    # See docs/architecture/baseline_reference.md for the current-vs-historical distinction and the reason for
+    # each file (prompt text and validation facts brought in line with data/Assignment_Data_Dictionary.xlsx).
+    _DICTIONARY_ALIGNMENT_FILES = {
+        "src/baseline/data_schema.py", "src/baseline/data_validation.py", "src/baseline/structured_schema.py",
+        "tests/baseline/test_data_layer.py", "tests/baseline/test_structured_query.py",
+    }
+
+    def _git(self, *args):
         try:
-            tag = subprocess.run(["git", "rev-parse", "--verify", "baseline-v0.1"], cwd=ROOT, capture_output=True, text=True, timeout=30)
+            return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=60)
         except (OSError, subprocess.SubprocessError):
             self.skipTest("git is not available")
+
+    def test_baseline_v0_1_tag_itself_is_unmoved(self):
+        obj = self._git("rev-parse", "--verify", "baseline-v0.1")
+        if obj.returncode != 0:
+            self.skipTest("tag baseline-v0.1 not found")
+        self.assertEqual(obj.stdout.strip(), self._TAG_OBJECT, "the baseline-v0.1 tag object has changed: it is no longer immutable")
+        commit = self._git("rev-parse", "baseline-v0.1^{commit}")
+        self.assertEqual(commit.stdout.strip(), self._TAG_COMMIT, "the commit baseline-v0.1 points to has changed: it is no longer immutable")
+
+    def test_baseline_files_differ_from_the_tag_only_where_explicitly_approved(self):
+        tag = self._git("rev-parse", "--verify", "baseline-v0.1")
         if tag.returncode != 0:
             self.skipTest("tag baseline-v0.1 not found")
-        diff = subprocess.run(["git", "diff", "--name-only", "baseline-v0.1", "--", "src/baseline", "tests/baseline", "tests/evaluation/questions.json"],
-                              cwd=ROOT, capture_output=True, text=True, timeout=60)
-        self.assertEqual(diff.stdout.strip(), "", "Baseline files differ from the frozen tag")
+        diff = self._git("diff", "--name-only", "baseline-v0.1", "--", "src/baseline", "tests/baseline", "tests/evaluation/questions.json")
+        changed = {line for line in diff.stdout.strip().splitlines() if line}
+        unapproved = changed - self._DICTIONARY_ALIGNMENT_FILES
+        self.assertEqual(unapproved, set(), f"Baseline files differ from the frozen tag outside the approved dictionary-alignment set: {sorted(unapproved)}")
 
 
 if __name__ == "__main__":

@@ -114,7 +114,7 @@ INVESTMENTS = TableSpec("investments", SHEET_INVESTMENTS, (
     _c("Client Name", "client_name", "TEXT", "text"),
     _c("Client_Group_Id_c", "group_id", "INTEGER", "int"),
     _c("deal_id", "deal_id", "TEXT", "text", "independent of deal_name (A5)"),
-    _c("id_CapitalCall", "id_capital_call", "INTEGER", "int", "meaning undocumented"),
+    _c("id_CapitalCall", "id_capital_call", "INTEGER", "int", "dictionary: a capital-call identifier within a deal; observed values are only 0/1 (a flag, not an identifier)"),
     _c("Investment_Amount_USD_for_agg", "investment_amount_usd_for_agg", "REAL", "real"),
     _c("Investment_Amount_Natural_Currency", "investment_amount_natural_currency", "REAL", "real"),
     _c("Natural_Currency_Code", "natural_currency_code", "TEXT", "text"),

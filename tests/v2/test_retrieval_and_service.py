@@ -67,6 +67,18 @@ class TestFusionPrimitives(unittest.TestCase):
 
 
 class TestSemanticRetrieval(Base):
+    def test_unmatched_count_is_available_for_a_real_fused_v2_result(self):
+        """payload_audit_v21.md fix 3: on a genuine V2 fused (rrf) evidence object, the unmatched count must be
+        computable deterministically, without the model deriving `scope - matched` itself."""
+        from src.v1.synthesis import unmatched_count
+        r = self.retriever()
+        q = "What did client A12345 discuss about hedging?"
+        ev = self.ask(r, q, "hedging")
+        self.assertEqual(ev.rank_method, "rrf")
+        un = unmatched_count(ev)
+        self.assertIsNotNone(un)
+        self.assertEqual(un, ev.filtered_meeting_count - ev.matched_count)
+
     def test_paraphrase_is_found_without_any_shared_word(self):
         r = self.retriever()
         q = "In client A12345's meetings, which mention a chief and providers?"

@@ -361,6 +361,31 @@ class TestPromptAndContext(Base):
         for hidden in ("is_group_flag", "client_last_met_date", "investments", "nonauth_"):
             self.assertNotIn(hidden, ctx)
 
+    def test_investment_context_states_the_id_capital_call_and_lob_dictionary_conflicts(self):
+        """data_dictionary_DRAFT.md decisions 3 and 7 (Abhishek's clarification, superseding the earlier dictionary-
+        alignment guess): the prompt text the SQL-generation LLM sees must state the id_capital_call conflict and
+        the confirmed canonical cod_lob meanings, so the model does not treat id_capital_call as a real identifier
+        or use nam_lob's raw (non-canonical) text as the LOB meaning."""
+        ctx = ss.build_schema_context("investment")
+        self.assertIn("0/1", ctx)
+        self.assertIn("cannot identify a specific capital call", ctx)
+        self.assertIn("Hedge Fund", ctx)               # confirmed canonical cod_lob meaning, not nam_lob's raw text
+
+    def test_performance_context_states_the_total_aum_and_investment_name_and_date_caveats(self):
+        """data_dictionary_DRAFT.md decisions 1, 5 and 6: total_aum_amount is never derived from the LOB AUM
+        fields, performance investment-name fields are never joined across sources, and First_*/Last_*_Investment_Date
+        are not exposed to SQL generation at all (Abhishek: ignore them, derive first/last facts from investments)."""
+        ctx = ss.build_schema_context("performance")
+        self.assertIn("total_aum_amount", ctx)
+        self.assertIn("is NOT the sum of the LOB", ctx)
+        self.assertIn("never join across sources", ctx)
+        self.assertIn("not usable application facts", ctx)
+        for hidden in ("first_ci_investment_date", "last_ci_investment_date",
+                       "first_re_investment_date", "last_re_investment_date",
+                       "first_hf_investment_date", "last_hf_investment_date"):
+            self.assertNotIn(hidden, ctx)
+        self.assertLess(len(ctx), 6000)                # still small (test_prompt_is_small_and_explicit's own bound)
+
     def test_prompt_is_small_and_explicit(self):
         e, _ = self.ask("What is client A12345's latest Total AUM?", "performance", reply("SELECT total_aum_amount FROM performance_latest WHERE client_id = 'A12345'"))
         prompt = e.adapter.prompts[0]

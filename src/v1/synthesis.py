@@ -19,13 +19,16 @@ RULES_V1 = BASELINE_RULES.replace("9. Be concise", _EXTRA_RULES + "\n12. Be conc
 
 
 def _unmatched(ev) -> Optional[int]:
-    if ev.rank_method == "bm25" and ev.filtered_meeting_count is not None and ev.matched_count is not None:
+    """`meetings in scope - meetings with a text match`, well-defined for any ranked retrieval mode (lexical `bm25`
+    or fused `rrf`): `matched_count` is always the count of meetings with a lexical text match, whichever mode
+    ranked the results. Not defined for a `date_desc` listing, which has no text match at all."""
+    if ev.rank_method != "date_desc" and ev.filtered_meeting_count is not None and ev.matched_count is not None:
         return ev.filtered_meeting_count - ev.matched_count
     return None
 
 
 def unmatched_count(meeting) -> Optional[int]:
-    """Deterministic: meetings in scope without a text match (lexical mode only)."""
+    """Deterministic: meetings in scope without a text match, for lexical or fused retrieval."""
     return _unmatched(meeting) if meeting is not None else None
 
 

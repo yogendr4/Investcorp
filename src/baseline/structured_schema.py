@@ -22,7 +22,15 @@ PERF_VIEWS = ("performance_client", "performance_latest", "performance_group")
 VIEW_BASE_TABLE = {v: "performance" for v in PERF_VIEWS}
 
 _INVESTMENT_HIDDEN = {c.name for c in INVESTMENTS.stored() if c.name.startswith("nonauth_")} | {"account_name_org"}
-_PERF_HIDDEN = {"client_last_met_date", "is_group_flag"}      # last-met comes from meetings (A13); the flag is applied by the views
+_PERF_HIDDEN = {
+    "client_last_met_date", "is_group_flag",      # last-met comes from meetings (A13); the flag is applied by the views
+    # Abhishek's clarification: performance First_*/Last_*_Investment_Date are not usable application facts.
+    # First/last investment facts, if asked, come from investments.dat_min_invested instead (decision 1); no SQL
+    # route derives that aggregate today, so such questions remain unsupported rather than answered from these columns.
+    "first_ci_investment_date", "last_ci_investment_date",
+    "first_re_investment_date", "last_re_investment_date",
+    "first_hf_investment_date", "last_hf_investment_date",
+}
 _PERF_GROUP_HIDDEN = {"client_id", "client_name"}
 
 INVESTMENT_DESCRIPTIONS = {
@@ -30,15 +38,15 @@ INVESTMENT_DESCRIPTIONS = {
     "client_name": "client name form Client_A12345",
     "group_id": "group identifier",
     "deal_id": "deal identifier (8 values); independent of deal_name; one deal_id can carry several deal_name values",
-    "id_capital_call": "0/1 flag, meaning undocumented",
+    "id_capital_call": "0/1 flag; the official dictionary describes it as a capital-call identifier within a deal, but observed values are only 0 or 1, so it cannot identify a specific capital call",
     "investment_amount_usd_for_agg": "amount in USD intended for aggregation; whether committed, called or invested is undocumented",
     "investment_amount_natural_currency": "amount in the record's own currency; add up only within one natural_currency_code",
     "natural_currency_code": "AED, EUR, GBP, INR, SGD or USD",
     "investment_exchange_rate": "fixed rate per currency to USD",
     "dat_min_invested": "ISO date text; the meaning of 'Min' is undocumented",
     "deal_name": "deal name (9 values); independent of deal_id",
-    "cod_lob": "line-of-business code (COP, HF, INF, PE, RE)",
-    "nam_lob": "line-of-business name",
+    "cod_lob": "line-of-business code: PE=Private Equity, HF=Hedge Fund, RE=Real Estate, COP=Credit Opportunity, INF=Infrastructure",
+    "nam_lob": "line-of-business name as stored in the source; its raw text does not match cod_lob's business meaning above, use cod_lob for LOB meaning",
     "flg_realised": "0/1 flag, meaning undocumented",
     "client_status": "Active, Dormant, Prospect or Closed; a property of the RECORD (a client has records with every status), never of the client",
     "account_name": "account name form 'Client A12345 Holdings'",
@@ -163,9 +171,11 @@ def build_schema_context(route: str) -> str:
             f"  MOIC, REAL, already NUMERIC (2.26 means 2.26x): {group('moic')}",
             f"  IRR, REAL, a fraction (0.0684, unit undocumented): {group('real', lambda n: n.endswith('_irr'))}",
             f"  Amounts, REAL, currency not stated: {group('real', lambda n: n.endswith('_amount'))}",
+            "  total_aum_amount is NOT the sum of the LOB *_aum_amount fields in this data (non-additive; never derive one from the other, use the field the question names)",
             f"  Status text: {group('text', lambda n: n.endswith('_status_name'))}",
-            f"  Fund names text: {group('text', lambda n: n.endswith('_investment_name'))}",
-            f"  Dates ISO text (contradictory in this data, use only if asked): {group('date', lambda n: n != 'as_of_date')}",
+            f"  Fund names text: {group('text', lambda n: n.endswith('_investment_name'))}  (no reliable key to relate these names to another sheet's deal names; never join across sources)",
+            "  First_*/Last_*_Investment_Date are not exposed here: they are not usable application facts (Abhishek's clarification); "
+            "first/last investment date questions are unsupported in this data model, not derived from these columns",
             _availability_text(),
         ]
         return "\n".join(lines)
